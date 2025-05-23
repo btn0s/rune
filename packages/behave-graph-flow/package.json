@@ -1,0 +1,45 @@
+{
+  "name": "@rune/behave-graph-flow",
+  "version": "0.9.12",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "source": "./src/index.ts",
+  "scripts": {
+    "build:css": "npx postcss src/styles.css -o dist/styles.css",
+    "build:tsc": "tsc",
+    "build": "npm run build:tsc && npm run build:css",
+    "dev": "npx postcss src/styles.css -o dist/styles.css --watch & tsc --watch",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@rune/typescript-config": "workspace:*",
+    "@rune/eslint-config": "workspace:*",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/uuid": "^8.3.4",
+    "postcss": "^8.4.0",
+    "postcss-cli": "^10.0.0",
+    "autoprefixer": "^10.4.0",
+    "tailwindcss": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@rune/behave-graph-core": "workspace:*",
+    "@fortawesome/fontawesome-svg-core": "^6.1.2",
+    "@fortawesome/free-solid-svg-icons": "^6.1.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "classnames": "^2.3.1",
+    "downshift": "^6.1.7",
+    "uuid": "^8.3.2"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@xyflow/react": "^12.0.0"
+  }
+}

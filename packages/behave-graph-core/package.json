@@ -1,0 +1,19 @@
+{
+  "name": "@rune/behave-graph-core",
+  "version": "0.9.12",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "source": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@rune/typescript-config": "workspace:*",
+    "@rune/eslint-config": "workspace:*",
+    "typescript": "^5.0.0"
+  }
+}
