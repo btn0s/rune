@@ -4,7 +4,10 @@ import {
   readGraphFromJSON,
   Engine,
   writeGraphToJSON,
+  type GraphJSON,
 } from "@rune/behave-graph-core";
+import { BehaveGraphFlow } from "@rune/flow";
+import "@xyflow/react/dist/style.css";
 
 export default function BehaveGraphDemo() {
   // Create a registry with the core profile
@@ -45,6 +48,11 @@ export default function BehaveGraphDemo() {
 
   const [output, setOutput] = useState<string>("");
   const [isRunning, setIsRunning] = useState(false);
+  const [currentGraph, setCurrentGraph] = useState<GraphJSON>(exampleGraph);
+
+  const handleGraphChange = (graph: GraphJSON) => {
+    setCurrentGraph(graph);
+  };
 
   const runGraph = async () => {
     setIsRunning(true);
@@ -52,7 +60,7 @@ export default function BehaveGraphDemo() {
 
     try {
       // Parse the graph
-      const graph = readGraphFromJSON({ graphJson: exampleGraph, registry });
+      const graph = readGraphFromJSON({ graphJson: currentGraph, registry });
 
       // Create and run the engine
       const engine = new Engine(graph.nodes);
@@ -84,113 +92,35 @@ export default function BehaveGraphDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">
-          Behave Graph Demo
-        </h1>
+    <div className="h-screen w-screen relative">
+      {/* Run Button - Top Right */}
+      <div className="absolute top-4 right-4 z-50 flex gap-3">
+        <button
+          onClick={runGraph}
+          disabled={isRunning}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg font-medium"
+        >
+          {isRunning ? "Running..." : "Run Graph"}
+        </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Graph Visualization */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Graph Structure</h2>
-            <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded border-l-4 border-blue-400">
-                <h3 className="font-medium text-blue-900">Node 1: Add</h3>
-                <p className="text-sm text-blue-700">math/add/float</p>
-                <p className="text-xs text-blue-600">Inputs: a=5, b=3</p>
-                <p className="text-xs text-blue-600">Output: result=8</p>
-              </div>
-
-              <div className="text-center text-gray-400">↓</div>
-
-              <div className="bg-green-50 p-4 rounded border-l-4 border-green-400">
-                <h3 className="font-medium text-green-900">Node 2: Multiply</h3>
-                <p className="text-sm text-green-700">math/multiply/float</p>
-                <p className="text-xs text-green-600">
-                  Inputs: a=Node1.result, b=2
-                </p>
-                <p className="text-xs text-green-600">Output: result=16</p>
-              </div>
-
-              <div className="text-center text-gray-400">↓</div>
-
-              <div className="bg-purple-50 p-4 rounded border-l-4 border-purple-400">
-                <h3 className="font-medium text-purple-900">Node 3: Log</h3>
-                <p className="text-sm text-purple-700">debug/log</p>
-                <p className="text-xs text-purple-600">
-                  Input: text=Node2.result
-                </p>
-                <p className="text-xs text-purple-600">
-                  Action: console.log(16)
-                </p>
-              </div>
-            </div>
+        {/* Output Panel Toggle */}
+        {output && (
+          <div className="bg-white rounded-lg shadow-lg p-3 max-w-xs">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Output:</h4>
+            <pre className="text-xs bg-gray-100 p-2 rounded max-h-32 overflow-auto">
+              {output}
+            </pre>
           </div>
-
-          {/* Controls and Output */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Execution</h2>
-              <button
-                onClick={runGraph}
-                disabled={isRunning}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isRunning ? "Running..." : "Execute Graph"}
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Output</h2>
-              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-64">
-                {output || 'Click "Execute Graph" to run the demo'}
-              </pre>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Registry Info</h2>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <strong>Node Types:</strong>{" "}
-                  {Object.keys(registry.nodes).length}
-                </p>
-                <p>
-                  <strong>Value Types:</strong>{" "}
-                  {Object.keys(registry.values).length}
-                </p>
-                <details className="mt-4">
-                  <summary className="cursor-pointer font-medium">
-                    Available Node Types (sample)
-                  </summary>
-                  <ul className="mt-2 space-y-1 text-xs text-gray-600 max-h-32 overflow-auto">
-                    {Object.keys(registry.nodes)
-                      .slice(0, 20)
-                      .map((nodeType) => (
-                        <li key={nodeType}>• {nodeType}</li>
-                      ))}
-                    {Object.keys(registry.nodes).length > 20 && (
-                      <li className="text-gray-400">
-                        ... and {Object.keys(registry.nodes).length - 20} more
-                      </li>
-                    )}
-                  </ul>
-                </details>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 p-4 bg-green-100 rounded-lg">
-          <p className="text-green-800 font-medium">
-            ✅ Behave Graph Core successfully integrated!
-          </p>
-          <p className="text-sm text-green-600 mt-1">
-            This demo shows a simple computational graph: (5 + 3) × 2 = 16, then
-            logs the result.
-          </p>
-        </div>
+        )}
       </div>
+
+      {/* Fullscreen Flow Editor */}
+      <BehaveGraphFlow
+        initialGraph={currentGraph}
+        registry={registry}
+        onGraphChange={handleGraphChange}
+        className="w-full h-full"
+      />
     </div>
   );
 }
