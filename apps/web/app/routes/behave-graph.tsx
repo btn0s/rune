@@ -18,29 +18,52 @@ export default function BehaveGraphDemo() {
   });
 
   // Simple example graph - a basic math operation
-  const exampleGraph = {
+  const exampleGraph: GraphJSON = {
     nodes: [
       {
         id: "1",
         type: "math/add/float",
-        inputs: {
+        parameters: {
           a: { value: 5 },
           b: { value: 3 },
+        },
+        metadata: {
+          positionX: "100",
+          positionY: "100",
         },
       },
       {
         id: "2",
         type: "math/multiply/float",
-        inputs: {
+        parameters: {
           a: { link: { nodeId: "1", socket: "result" } },
           b: { value: 2 },
+        },
+        metadata: {
+          positionX: "300",
+          positionY: "100",
         },
       },
       {
         id: "3",
         type: "debug/log",
-        inputs: {
+        parameters: {
           text: { link: { nodeId: "2", socket: "result" } },
+        },
+        metadata: {
+          positionX: "500",
+          positionY: "200",
+        },
+      },
+      {
+        id: "4",
+        type: "lifecycle/onStart",
+        flows: {
+          flow: { nodeId: "3", socket: "flow" },
+        },
+        metadata: {
+          positionX: "300",
+          positionY: "300",
         },
       },
     ],
