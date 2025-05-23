@@ -1,12 +1,12 @@
 import { GraphJSON, NodeSpecJSON } from '@rune/behave-graph-core';
 import { useCallback, useEffect, useState } from 'react';
-import { useEdgesState, useNodesState } from '@xyflow/react';
+import { useEdgesState, useNodesState, Node, Edge } from "@xyflow/react";
 
-import { behaveToFlow } from '../transformers/behaveToFlow.js';
-import { flowToBehave } from '../transformers/flowToBehave.js';
-import { autoLayout } from '../util/autoLayout.js';
-import { hasPositionMetaData } from '../util/hasPositionMetaData.js';
-import { useCustomNodeTypes } from './useCustomNodeTypes.js';
+import { behaveToFlow } from "../transformers/behaveToFlow.js";
+import { flowToBehave } from "../transformers/flowToBehave.js";
+import { autoLayout } from "../util/autoLayout.js";
+import { hasPositionMetaData } from "../util/hasPositionMetaData.js";
+import { useCustomNodeTypes } from "./useCustomNodeTypes.js";
 
 export const fetchBehaviorGraphJson = async (url: string) =>
   // eslint-disable-next-line unicorn/no-await-expression-member
@@ -21,14 +21,14 @@ export const fetchBehaviorGraphJson = async (url: string) =>
  */
 export const useBehaveGraphFlow = ({
   initialGraphJson,
-  specJson
+  specJson,
 }: {
   initialGraphJson: GraphJSON;
   specJson: NodeSpecJSON[] | undefined;
 }) => {
   const [graphJson, setStoredGraphJson] = useState<GraphJSON | undefined>();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const setGraphJson = useCallback(
     (graphJson: GraphJSON) => {
@@ -60,7 +60,7 @@ export const useBehaveGraphFlow = ({
   }, [nodes, edges, specJson]);
 
   const nodeTypes = useCustomNodeTypes({
-    specJson
+    specJson,
   });
 
   return {
@@ -70,6 +70,6 @@ export const useBehaveGraphFlow = ({
     onNodesChange,
     setGraphJson,
     graphJson,
-    nodeTypes
+    nodeTypes,
   };
 };

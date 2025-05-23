@@ -39,7 +39,7 @@
     "@react-router/node": "^7.5.3",
     "@react-router/serve": "^7.5.3",
     "@rune/behave-graph-core": "workspace:*",
-    "@rune/flow": "workspace:*",
+    "@rune/behave-graph-flow": "workspace:*",
     "@xyflow/react": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

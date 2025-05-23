@@ -5,19 +5,27 @@ import {
   useEffect,
   useState
 } from 'react';
-import { Connection, Node, OnConnectStartParams, XYPosition } from '@xyflow/react';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Connection,
+  Node,
+  OnConnectStartParams,
+  XYPosition,
+  Edge,
+  NodeChange,
+  EdgeChange,
+} from "@xyflow/react";
+import { v4 as uuidv4 } from "uuid";
 
-import { calculateNewEdge } from '../util/calculateNewEdge.js';
-import { getNodePickerFilters } from '../util/getPickerFilters.js';
-import { useBehaveGraphFlow } from './useBehaveGraphFlow.js';
+import { calculateNewEdge } from "../util/calculateNewEdge.js";
+import { getNodePickerFilters } from "../util/getPickerFilters.js";
+import { useBehaveGraphFlow } from "./useBehaveGraphFlow.js";
 
 type BehaveGraphFlow = ReturnType<typeof useBehaveGraphFlow>;
 
 const useNodePickFilters = ({
   nodes,
   lastConnectStart,
-  specJSON
+  specJSON,
 }: {
   nodes: Node[];
   lastConnectStart: OnConnectStartParams | undefined;
@@ -38,8 +46,10 @@ export const useFlowHandlers = ({
   onEdgesChange,
   onNodesChange,
   nodes,
-  specJSON
-}: Pick<BehaveGraphFlow, 'onEdgesChange' | 'onNodesChange'> & {
+  specJSON,
+}: {
+  onEdgesChange: (changes: EdgeChange[]) => void;
+  onNodesChange: (changes: NodeChange[]) => void;
   nodes: Node[];
   specJSON: NodeSpecJSON[] | undefined;
 }) => {
@@ -53,18 +63,18 @@ export const useFlowHandlers = ({
       if (connection.source === null) return;
       if (connection.target === null) return;
 
-      const newEdge = {
+      const newEdge: Edge = {
         id: uuidv4(),
         source: connection.source,
         target: connection.target,
         sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle
+        targetHandle: connection.targetHandle,
       };
       onEdgesChange([
         {
-          type: 'add',
-          item: newEdge
-        }
+          type: "add",
+          item: newEdge,
+        },
       ]);
     },
     [onEdgesChange]
@@ -78,17 +88,17 @@ export const useFlowHandlers = ({
   const handleAddNode = useCallback(
     (nodeType: string, position: XYPosition) => {
       closeNodePicker();
-      const newNode = {
+      const newNode: Node = {
         id: uuidv4(),
         type: nodeType,
         position,
-        data: {}
+        data: {},
       };
       onNodesChange([
         {
-          type: 'add',
-          item: newNode
-        }
+          type: "add",
+          item: newNode,
+        },
       ]);
 
       if (lastConnectStart === undefined) return;
@@ -101,15 +111,15 @@ export const useFlowHandlers = ({
       if (!specJSON) return;
       onEdgesChange([
         {
-          type: 'add',
+          type: "add",
           item: calculateNewEdge(
             originNode,
             nodeType,
             newNode.id,
             lastConnectStart,
             specJSON
-          )
-        }
+          ),
+        },
       ]);
     },
     [
@@ -118,7 +128,7 @@ export const useFlowHandlers = ({
       nodes,
       onEdgesChange,
       onNodesChange,
-      specJSON
+      specJSON,
     ]
   );
 
@@ -131,7 +141,7 @@ export const useFlowHandlers = ({
 
   const handleStopConnect = useCallback((e: MouseEvent) => {
     const element = e.target as HTMLElement;
-    if (element.classList.contains('react-flow__pane')) {
+    if (element.classList.contains("react-flow__pane")) {
       setNodePickerVisibility({ x: e.clientX, y: e.clientY });
     } else {
       setLastConnectStart(undefined);
@@ -143,15 +153,20 @@ export const useFlowHandlers = ({
     [closeNodePicker]
   );
 
-  const handlePaneContextMenu = useCallback((e: ReactMouseEvent) => {
-    e.preventDefault();
-    setNodePickerVisibility({ x: e.clientX, y: e.clientY });
-  }, []);
+  const handlePaneContextMenu = useCallback(
+    (e: ReactMouseEvent | MouseEvent) => {
+      e.preventDefault();
+      const clientX = "clientX" in e ? e.clientX : 0;
+      const clientY = "clientY" in e ? e.clientY : 0;
+      setNodePickerVisibility({ x: clientX, y: clientY });
+    },
+    []
+  );
 
   const nodePickFilters = useNodePickFilters({
     nodes,
     lastConnectStart,
-    specJSON
+    specJSON,
   });
 
   return {
@@ -164,6 +179,6 @@ export const useFlowHandlers = ({
     nodePickerVisibility,
     handleAddNode,
     closeNodePicker,
-    nodePickFilters
+    nodePickFilters,
   };
 };

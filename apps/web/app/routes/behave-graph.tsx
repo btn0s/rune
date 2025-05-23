@@ -1,149 +1,91 @@
 import { useState } from "react";
 import {
   registerCoreProfile,
-  readGraphFromJSON,
-  Engine,
-  writeGraphToJSON,
   type GraphJSON,
+  ManualLifecycleEventEmitter,
+  DefaultLogger,
 } from "@rune/behave-graph-core";
-import { BehaveGraphFlow } from "@rune/flow";
+import { Flow } from "@rune/behave-graph-flow";
 import "@xyflow/react/dist/style.css";
+
+const exampleGraph: GraphJSON = {
+  nodes: [
+    {
+      id: "1",
+      type: "math/add/float",
+      parameters: {
+        a: { value: 5 },
+        b: { value: 3 },
+      },
+      metadata: {
+        positionX: "100",
+        positionY: "100",
+      },
+    },
+    {
+      id: "2",
+      type: "math/multiply/float",
+      parameters: {
+        a: { link: { nodeId: "1", socket: "result" } },
+        b: { value: 2 },
+      },
+      metadata: {
+        positionX: "300",
+        positionY: "100",
+      },
+    },
+    {
+      id: "3",
+      type: "debug/log",
+      parameters: {
+        text: { link: { nodeId: "2", socket: "result" } },
+        severity: { value: "error" },
+      },
+      metadata: {
+        positionX: "500",
+        positionY: "200",
+      },
+    },
+    {
+      id: "4",
+      type: "lifecycle/onStart",
+      flows: {
+        flow: { nodeId: "3", socket: "flow" },
+      },
+      metadata: {
+        positionX: "300",
+        positionY: "300",
+      },
+    },
+  ],
+};
 
 export default function BehaveGraphDemo() {
   // Create a registry with the core profile
   const registry = registerCoreProfile({
     values: {},
     nodes: {},
-    dependencies: {},
+    dependencies: {
+      ILogger: new DefaultLogger(),
+      ILifecycleEventEmitter: new ManualLifecycleEventEmitter(),
+    },
   });
 
-  // Simple example graph - a basic math operation
-  const exampleGraph: GraphJSON = {
-    nodes: [
-      {
-        id: "1",
-        type: "math/add/float",
-        parameters: {
-          a: { value: 5 },
-          b: { value: 3 },
-        },
-        metadata: {
-          positionX: "100",
-          positionY: "100",
-        },
-      },
-      {
-        id: "2",
-        type: "math/multiply/float",
-        parameters: {
-          a: { link: { nodeId: "1", socket: "result" } },
-          b: { value: 2 },
-        },
-        metadata: {
-          positionX: "300",
-          positionY: "100",
-        },
-      },
-      {
-        id: "3",
-        type: "debug/log",
-        parameters: {
-          text: { link: { nodeId: "2", socket: "result" } },
-        },
-        metadata: {
-          positionX: "500",
-          positionY: "200",
-        },
-      },
-      {
-        id: "4",
-        type: "lifecycle/onStart",
-        flows: {
-          flow: { nodeId: "3", socket: "flow" },
-        },
-        metadata: {
-          positionX: "300",
-          positionY: "300",
-        },
-      },
-    ],
-  };
-
-  const [output, setOutput] = useState<string>("");
-  const [isRunning, setIsRunning] = useState(false);
   const [currentGraph, setCurrentGraph] = useState<GraphJSON>(exampleGraph);
 
-  const handleGraphChange = (graph: GraphJSON) => {
-    setCurrentGraph(graph);
+  // Examples object for the Flow component
+  const examples = {
+    "Basic Math": exampleGraph,
   };
-
-  const runGraph = async () => {
-    setIsRunning(true);
-    setOutput("Running graph...\n");
-
-    try {
-      // Parse the graph
-      const graph = readGraphFromJSON({ graphJson: currentGraph, registry });
-
-      // Create and run the engine
-      const engine = new Engine(graph.nodes);
-
-      // Capture console.log output
-      const originalLog = console.log;
-      let logOutput = "";
-      console.log = (...args) => {
-        logOutput += args.join(" ") + "\n";
-        originalLog(...args);
-      };
-
-      // Execute the graph
-      await engine.executeAllAsync();
-
-      // Restore console.log
-      console.log = originalLog;
-
-      setOutput(
-        `Graph executed successfully!\n\nCalculation: (5 + 3) × 2 = 16\n\nConsole output:\n${logOutput}`
-      );
-    } catch (error) {
-      setOutput(
-        `Error: ${error instanceof Error ? error.message : String(error)}`
-      );
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
   return (
     <div className="h-screen w-screen relative">
-      {/* Run Button - Top Right */}
-      <div className="absolute top-4 right-4 z-50 flex gap-3">
-        <button
-          onClick={runGraph}
-          disabled={isRunning}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg font-medium"
-        >
-          {isRunning ? "Running..." : "Run Graph"}
-        </button>
-
-        {/* Output Panel Toggle */}
-        {output && (
-          <div className="bg-white rounded-lg shadow-lg p-3 max-w-xs">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Output:</h4>
-            <pre className="text-xs bg-gray-100 p-2 rounded max-h-32 overflow-auto">
-              {output}
-            </pre>
-          </div>
-        )}
+      <div className="w-full h-full">
+        <Flow
+          initialGraph={currentGraph}
+          registry={registry}
+          examples={examples}
+        />
       </div>
-
-      {/* Fullscreen Flow Editor */}
-      <BehaveGraphFlow
-        initialGraph={currentGraph}
-        registry={registry}
-        onGraphChange={handleGraphChange}
-        className="w-full h-full"
-      />
     </div>
   );
 }

@@ -10,7 +10,7 @@
     "build:css": "npx postcss src/styles.css -o dist/styles.css",
     "build:tsc": "tsc",
     "build": "npm run build:tsc && npm run build:css",
-    "dev": "npx postcss src/styles.css -o dist/styles.css --watch & tsc --watch",
+    "dev": "npm run build && npx postcss src/styles.css -o dist/styles.css --watch & tsc --watch",
     "test": "jest"
   },
   "devDependencies": {

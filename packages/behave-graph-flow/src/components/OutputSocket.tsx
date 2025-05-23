@@ -45,9 +45,9 @@ export default function OutputSocket({
         id={name}
         type="source"
         position={Position.Right}
-        className={cx(borderColor, connected ? backgroundColor : 'bg-gray-800')}
-        isValidConnection={(connection: Connection) =>
-          isValidConnection(connection, instance, specJSON)
+        className={cx(borderColor, connected ? backgroundColor : "bg-gray-800")}
+        isValidConnection={(connection) =>
+          isValidConnection(connection as Connection, instance, specJSON)
         }
       />
     </div>

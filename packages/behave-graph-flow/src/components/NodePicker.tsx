@@ -66,7 +66,9 @@ export const NodePicker: React.FC<NodePickerProps> = ({
           <div
             key={type}
             className="p-2 cursor-pointer border-b border-gray-600"
-            onClick={() => onPickNode(type, instance.project(position))}
+            onClick={() =>
+              onPickNode(type, instance.screenToFlowPosition(position))
+            }
           >
             {type}
           </div>
