@@ -31,6 +31,12 @@ export default function OutputSocket({
   valueType,
   name,
 }: OutputSocketProps) {
+  console.log("OUTPUT SOCKET", {
+    specJSON,
+    connected,
+    valueType,
+    name,
+  });
   const instance = useReactFlow();
   const connections = useNodeConnections();
 

@@ -19,24 +19,34 @@ const NodeContainer: React.FC<PropsWithChildren<NodeProps>> = ({
 }) => {
   const defaultColors = getCategoryColors(category, "default");
   const mutedColors = getCategoryColors(category, "muted");
-  const borderColor = selected ? mutedColors.border : defaultColors.border;
 
   return (
     <div
       className={cx(
-        "rounded-md text-sm bg-foreground/5 backdrop-blur min-w-[200px] shadow-lg border hover:shadow-md transition-shadow",
-        borderColor
+        "rounded-md text-sm backdrop-blur bg-foreground/5 min-w-[200px] shadow-lg border hover:shadow-md transition-shadow",
+        selected
+          ? "ring-2 ring-pink-100 ring-offset-2 ring-offset-background"
+          : ""
       )}
     >
       {/* Modern Header with Icon */}
       <div
         className={cx(
-          "flex items-center gap-2 px-3 py-2 border-b rounded-t-md",
-          borderColor
+          "flex items-center gap-1 px-3 py-2 border-b rounded-t-md"
         )}
       >
-        <span className="">{getNodeCategoryIcon(category)}</span>
-        <h3 className="text-xs font-medium flex-1 select-none">{title}</h3>
+        <div
+          className={cx(
+            "size-4 rounded-full p-0.5 flex items-center justify-center",
+            mutedColors.background,
+            defaultColors.text
+          )}
+        >
+          {getNodeCategoryIcon(category)}
+        </div>
+        <h3 className="text-xs font-medium flex-1 select-none leading-none">
+          {title}
+        </h3>
       </div>
 
       {/* Content Area */}
