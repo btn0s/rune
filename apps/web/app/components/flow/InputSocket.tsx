@@ -21,6 +21,13 @@ import { getValueTypeColors } from "~/lib/flow/util/colors";
 import { isValidConnection } from "~/lib/flow/util/isValidConnection";
 import { AutoSizeInput } from "./AutoSizeInput";
 import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export type InputSocketProps = {
   connected: boolean;
@@ -48,19 +55,24 @@ const InputFieldForValue = ({
 
   if (showChoices)
     return (
-      <select
-        className={inputClassName}
+      <Select
         value={value ?? defaultValue ?? ""}
-        onChange={(e) => onChange(name, e.currentTarget.value)}
+        onValueChange={(newValue) => onChange(name, newValue)}
       >
-        <>
+        <SelectTrigger
+          className="text-xs h-6 bg-gray-50 border rounded px-2 nodrag focus:outline-none focus:ring-1 focus:ring-blue-300"
+          size="sm"
+        >
+          <SelectValue placeholder="Select..." />
+        </SelectTrigger>
+        <SelectContent>
           {choices.map((choice) => (
-            <option key={choice.text} value={choice.value}>
+            <SelectItem key={choice.text} value={choice.value}>
               {choice.text}
-            </option>
+            </SelectItem>
           ))}
-        </>
-      </select>
+        </SelectContent>
+      </Select>
     );
 
   return (
