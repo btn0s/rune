@@ -24,7 +24,7 @@ const NodeContainer: React.FC<PropsWithChildren<NodeProps>> = ({
   return (
     <div
       className={cx(
-        "rounded-md text-sm backdrop-blur min-w-[200px] shadow-lg border hover:shadow-md transition-shadow",
+        "rounded-md text-sm bg-foreground/5 backdrop-blur min-w-[200px] shadow-lg border hover:shadow-md transition-shadow",
         borderColor
       )}
     >

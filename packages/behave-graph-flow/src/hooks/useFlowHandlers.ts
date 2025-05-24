@@ -133,16 +133,18 @@ export const useFlowHandlers = ({
   );
 
   const handleStartConnect = useCallback(
-    (e: ReactMouseEvent, params: OnConnectStartParams) => {
+    (event: MouseEvent | TouchEvent, params: OnConnectStartParams) => {
       setLastConnectStart(params);
     },
     []
   );
 
-  const handleStopConnect = useCallback((e: MouseEvent) => {
-    const element = e.target as HTMLElement;
+  const handleStopConnect = useCallback((event: MouseEvent | TouchEvent) => {
+    const element = event.target as HTMLElement;
     if (element.classList.contains("react-flow__pane")) {
-      setNodePickerVisibility({ x: e.clientX, y: e.clientY });
+      const clientX = "clientX" in event ? event.clientX : 0;
+      const clientY = "clientY" in event ? event.clientY : 0;
+      setNodePickerVisibility({ x: clientX, y: clientY });
     } else {
       setLastConnectStart(undefined);
     }

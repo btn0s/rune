@@ -78,6 +78,10 @@ export default function BehaveGraphDemo() {
   };
   return (
     <div className="h-screen w-screen relative">
+      <div className="absolute top-0 left-0 z-10 flex items-center gap-2 p-2">
+        <img src="/logo.svg" className="size-6" />
+        <h1 className="font-bold leading-none">rune</h1>
+      </div>
       <div className="w-full h-full">
         <Flow
           initialGraph={currentGraph}

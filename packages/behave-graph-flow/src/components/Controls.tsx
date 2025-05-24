@@ -10,12 +10,12 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import React from 'react';
-import { ControlButton, Controls } from '@xyflow/react';
+import { ControlButton, Controls, Position } from "@xyflow/react";
 
-import { ClearModal } from './modals/ClearModal.js';
-import { HelpModal } from './modals/HelpModal.js';
-import { Examples, LoadModal } from './modals/LoadModal.js';
-import { SaveModal } from './modals/SaveModal.js';
+import { ClearModal } from "./modals/ClearModal.js";
+import { HelpModal } from "./modals/HelpModal.js";
+import { Examples, LoadModal } from "./modals/LoadModal.js";
+import { SaveModal } from "./modals/SaveModal.js";
 
 export type CustomControlsProps = {
   playing: boolean;
@@ -30,7 +30,7 @@ export const CustomControls: React.FC<CustomControlsProps> = ({
   togglePlay,
   setBehaviorGraph,
   examples,
-  specJson
+  specJson,
 }: {
   playing: boolean;
   togglePlay: () => void;
@@ -45,7 +45,7 @@ export const CustomControls: React.FC<CustomControlsProps> = ({
 
   return (
     <>
-      <Controls>
+      <Controls position={"top-right"}>
         <ControlButton title="Help" onClick={() => setHelpModalOpen(true)}>
           <FontAwesomeIcon icon={faQuestion} />
         </ControlButton>

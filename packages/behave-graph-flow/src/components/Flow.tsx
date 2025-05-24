@@ -67,14 +67,12 @@ export const Flow: React.FC<FlowProps> = ({
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      // @ts-ignore
       onConnectStart={handleStartConnect}
-      // @ts-ignore
       onConnectEnd={handleStopConnect}
-      fitView
       fitViewOptions={{ maxZoom: 1 }}
       onPaneClick={handlePaneClick}
       onPaneContextMenu={handlePaneContextMenu}
+      colorMode="dark"
     >
       <CustomControls
         playing={playing}
