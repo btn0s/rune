@@ -6,7 +6,6 @@ import {
   DefaultLogger,
 } from "@rune/behave-graph-core";
 import { Flow } from "@rune/behave-graph-flow";
-import "@xyflow/react/dist/style.css";
 
 const exampleGraph: GraphJSON = {
   nodes: [

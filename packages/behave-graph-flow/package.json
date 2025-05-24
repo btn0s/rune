@@ -7,10 +7,10 @@
   "main": "./dist/index.js",
   "source": "./src/index.ts",
   "scripts": {
-    "build:css": "npx postcss src/styles.css -o dist/styles.css",
+    "build:css": "npx @tailwindcss/cli -i ./src/styles.css -o ./dist/styles.css --watch",
     "build:tsc": "tsc",
     "build": "npm run build:tsc && npm run build:css",
-    "dev": "npm run build && npx postcss src/styles.css -o dist/styles.css --watch & tsc --watch",
+    "dev": "tsc --watch & npx @tailwindcss/cli -i ./src/styles.css -o ./dist/styles.css --watch",
     "test": "jest"
   },
   "devDependencies": {
@@ -25,7 +25,7 @@
     "autoprefixer": "^10.4.0",
     "postcss": "^8.5.3",
     "postcss-cli": "^10.0.0",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.7",
     "typescript": "^5.0.0"
   },
   "dependencies": {
@@ -60,6 +60,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@rune/behave-graph-core": "workspace:*",
+    "@tailwindcss/cli": "^4.1.7",
     "@tailwindcss/postcss": "^4.1.7",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.3.1",
@@ -73,6 +74,7 @@
     "next-themes": "^0.4.6",
     "react-day-picker": "8.10.1",
     "react-hook-form": "^7.56.4",
+    "react-icons": "^5.5.0",
     "react-resizable-panels": "^3.0.2",
     "recharts": "^2.15.3",
     "sonner": "^2.0.3",

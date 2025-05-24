@@ -36,4 +36,5 @@ export * from './util/isHandleConnected.js';
 export * from './util/isValidConnection.js';
 export * from './util/sleep.js';
 
-import './styles.css';
+import "@xyflow/react/dist/style.css";
+import "./styles.css";

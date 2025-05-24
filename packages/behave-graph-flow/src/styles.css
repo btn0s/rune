@@ -120,4 +120,36 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .justify-end {
+    justify-content: flex-end !important;
+  }
+  
+  .react-flow__handle {
+    position: unset !important;
+    width: unset !important;
+    height: unset !important;
+    min-width: unset !important;
+    min-height: unset !important;
+    background-color: unset !important;
+    border: unset !important;
+    border-radius: unset !important;
+  }
+  
+  .react-flow__handle-left {
+    top: 0 !important;
+    left: 0 !important;
+    transform: unset !important;
+  }
+  
+  .react-flow__handle-right {
+    top: 0 !important;
+    right: 0 !important;
+    transform: unset !important;
+  }
+  
+  .react-flow__edges {
+    z-index: 1000 !important;
+  }
 }
+

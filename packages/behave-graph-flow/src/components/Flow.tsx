@@ -83,11 +83,7 @@ export const Flow: React.FC<FlowProps> = ({
         examples={examples}
         specJson={specJson}
       />
-      <Background
-        variant={BackgroundVariant.Lines}
-        color="#2a2b2d"
-        style={{ backgroundColor: '#1E1F22' }}
-      />
+
       {nodePickerVisibility && (
         <NodePicker
           position={nodePickerVisibility}

@@ -1,13 +1,23 @@
-import { InputSocketSpecJSON, NodeSpecJSON } from '@rune/behave-graph-core';
-import { faCaretRight } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import cx from 'classnames';
-import React from 'react';
-import { Connection, Handle, Position, useReactFlow } from '@xyflow/react';
+import { InputSocketSpecJSON, NodeSpecJSON } from "@rune/behave-graph-core";
+import cx from "classnames";
+import React from "react";
+import {
+  Connection,
+  Handle,
+  Position,
+  useReactFlow,
+  useNodeConnections,
+} from "@xyflow/react";
+import {
+  TbSquareRoundedChevronRight,
+  TbSquareRoundedChevronRightFilled,
+} from "react-icons/tb";
+import { FaRegCircle, FaRegDotCircle } from "react-icons/fa";
 
-import { colors, valueTypeColorMap } from '../util/colors.js';
-import { isValidConnection } from '../util/isValidConnection.js';
-import { AutoSizeInput } from './AutoSizeInput.js';
+import { getValueTypeColors } from "../util/colors.js";
+import { isValidConnection } from "../util/isValidConnection.js";
+import { AutoSizeInput } from "./AutoSizeInput.js";
+import { cn } from "../lib/utils.js";
 
 export type InputSocketProps = {
   connected: boolean;
@@ -22,19 +32,22 @@ const InputFieldForValue = ({
   defaultValue,
   onChange,
   name,
-  valueType
+  valueType,
 }: Pick<
   InputSocketProps,
-  'choices' | 'value' | 'defaultValue' | 'name' | 'onChange' | 'valueType'
+  "choices" | "value" | "defaultValue" | "name" | "onChange" | "valueType"
 >) => {
   const showChoices = choices?.length;
-  const inputVal = String(value) ?? defaultValue ?? '';
+  const inputVal = String(value) ?? defaultValue ?? "";
+
+  const inputClassName =
+    "text-xs h-6 bg-gray-50 border border-gray-200 rounded px-2 nodrag focus:outline-none focus:ring-1 focus:ring-blue-300";
 
   if (showChoices)
     return (
       <select
-        className="bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
-        value={value ?? defaultValue ?? ''}
+        className={inputClassName}
+        value={value ?? defaultValue ?? ""}
         onChange={(e) => onChange(name, e.currentTarget.value)}
       >
         <>
@@ -49,43 +62,31 @@ const InputFieldForValue = ({
 
   return (
     <>
-      {valueType === 'string' && (
+      {valueType === "string" && (
         <AutoSizeInput
           type="text"
-          className="bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
+          className={inputClassName}
           value={inputVal}
           onChange={(e) => onChange(name, e.currentTarget.value)}
+          placeholder="..."
         />
       )}
-      {valueType === 'number' && (
+      {(valueType === "number" ||
+        valueType === "float" ||
+        valueType === "integer") && (
         <AutoSizeInput
           type="number"
-          className=" bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
+          className={inputClassName}
           value={inputVal}
           onChange={(e) => onChange(name, e.currentTarget.value)}
+          placeholder="0"
         />
       )}
-      {valueType === 'float' && (
-        <AutoSizeInput
-          type="number"
-          className=" bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
-          value={inputVal}
-          onChange={(e) => onChange(name, e.currentTarget.value)}
-        />
-      )}
-      {valueType === 'integer' && (
-        <AutoSizeInput
-          type="number"
-          className=" bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
-          value={inputVal}
-          onChange={(e) => onChange(name, e.currentTarget.value)}
-        />
-      )}
-      {valueType === 'boolean' && (
+      {valueType === "boolean" && (
         <input
           type="checkbox"
-          className=" bg-gray-600 disabled:bg-gray-700 py-1 px-2 nodrag"
-          value={inputVal}
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 nodrag"
+          checked={Boolean(value)}
           onChange={(e) => onChange(name, e.currentTarget.checked)}
         />
       )}
@@ -100,37 +101,85 @@ const InputSocket: React.FC<InputSocketProps> = ({
 }) => {
   const { value, name, valueType, defaultValue, choices } = rest;
   const instance = useReactFlow();
+  const connections = useNodeConnections();
 
-  const isFlowSocket = valueType === 'flow';
+  const isFlowSocket = valueType === "flow";
+  const isConnected =
+    connected ||
+    !!connections.find((connection) => connection.targetHandle === name);
 
-  let colorName = valueTypeColorMap[valueType];
-  if (colorName === undefined) {
-    colorName = 'red';
-  }
-
-  const inputVal = String(value) ?? defaultValue ?? '';
-
-  // @ts-ignore
-  const [backgroundColor, borderColor] = colors[colorName];
-  const showName = isFlowSocket === false || name !== 'flow';
+  const colors = getValueTypeColors(valueType, "default");
+  const showName = isFlowSocket === false || name !== "flow";
 
   return (
-    <div className="flex grow items-center justify-start h-7">
-      {isFlowSocket && (
-        <FontAwesomeIcon icon={faCaretRight} color="#ffffff" size="lg" />
+    <div
+      className={cn(
+        "relative flex gap-1 flex-row",
+        !isFlowSocket && !isConnected ? "items-start" : "items-center"
       )}
-      {showName && <div className="capitalize mr-2">{name}</div>}
-
-      {!isFlowSocket && !connected && <InputFieldForValue {...rest} />}
+    >
+      {/* Handle with Icon */}
       <Handle
         id={name}
         type="target"
         position={Position.Left}
-        className={cx(borderColor, connected ? backgroundColor : "bg-gray-800")}
+        className={cn(
+          "group flex items-center justify-center !border-none !m-0 !p-0 !max-w-none !max-h-none !h-fit !w-fit !bg-transparent !relative !top-0 !left-0 !right-0 !bottom-0 !translate-x-0 !translate-y-0 !transform-none !rounded-none",
+          !isFlowSocket && !isConnected ? "mt-3" : ""
+        )}
         isValidConnection={(connection) =>
           isValidConnection(connection as Connection, instance, specJSON)
         }
-      />
+      >
+        {isFlowSocket ? (
+          isConnected ? (
+            <TbSquareRoundedChevronRightFilled
+              className={cn(
+                "pointer-events-none",
+                isConnected
+                  ? "text-foreground"
+                  : "text-foreground/50 hover:text-foreground"
+              )}
+            />
+          ) : (
+            <TbSquareRoundedChevronRight
+              className={cn(
+                "pointer-events-none",
+                isConnected
+                  ? "text-foreground"
+                  : "text-foreground/50 hover:text-foreground"
+              )}
+            />
+          )
+        ) : isConnected ? (
+          <FaRegDotCircle
+            className={cn(
+              "pointer-events-none rounded-full",
+              colors.background
+            )}
+          />
+        ) : (
+          <FaRegCircle
+            className={cn(
+              "pointer-events-none !bg-none rounded-full",
+              colors.text
+            )}
+          />
+        )}
+      </Handle>
+
+      {/* Label and Input Container */}
+      <div className="flex flex-col gap-1 flex-1">
+        {showName && (
+          <label className="text-xs text-foreground capitalize">{name}</label>
+        )}
+
+        {!isFlowSocket && !isConnected && (
+          <div className="flex items-center">
+            <InputFieldForValue {...rest} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
