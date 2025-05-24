@@ -9,6 +9,7 @@ import { useNodeSpecJson } from "~/hooks/useNodeSpecJson";
 import CustomControls from "./Controls";
 import type { Examples } from "./modals/LoadModal";
 import { NodePicker } from "./NodePicker";
+import ColoredEdge from "./ColoredEdge";
 
 type FlowProps = {
   initialGraph: GraphJSON;
@@ -59,9 +60,15 @@ export const Flow: React.FC<FlowProps> = ({
     registry,
   });
 
+  // Define edge types
+  const edgeTypes = {
+    default: ColoredEdge,
+  };
+
   return (
     <ReactFlow
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

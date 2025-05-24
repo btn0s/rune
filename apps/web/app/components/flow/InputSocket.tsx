@@ -44,7 +44,7 @@ const InputFieldForValue = ({
   const inputVal = String(value) ?? defaultValue ?? "";
 
   const inputClassName =
-    "text-xs h-6 bg-gray-50 border border-gray-200 rounded px-2 nodrag focus:outline-none focus:ring-1 focus:ring-blue-300";
+    "text-xs h-6 bg-gray-50 border rounded px-2 nodrag focus:outline-none focus:ring-1 focus:ring-blue-300";
 
   if (showChoices)
     return (

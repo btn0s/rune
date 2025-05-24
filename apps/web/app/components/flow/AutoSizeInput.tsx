@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { Input } from "../ui/input";
 
 export type AutoSizeInputProps = HTMLProps<HTMLInputElement> & {
   minWidth?: number;
@@ -55,7 +56,7 @@ export const AutoSizeInput: React.FC<AutoSizeInputProps> = ({
 
   return (
     <>
-      <input ref={setRef} {...props} />
+      <Input ref={setRef} {...props} />
       <span ref={measureRef} style={{ ...baseStyles, ...styles }}>
         {props.value}
       </span>

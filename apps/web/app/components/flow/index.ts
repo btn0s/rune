@@ -6,6 +6,7 @@ export { AutoSizeInput } from "./AutoSizeInput";
 export { default as CustomControls } from "./Controls";
 export { default as InputSocket } from "./InputSocket";
 export { default as OutputSocket } from "./OutputSocket";
+export { default as ColoredEdge } from "./ColoredEdge";
 
 // Export modals
 export { ClearModal } from "./modals/ClearModal";

@@ -45,12 +45,35 @@ export const useBehaveGraphFlow = ({
         autoLayout(nodes, edges);
       }
 
+      // Inject specJson into edge data for ColoredEdge component
+      const edgesWithSpecJson = edges.map((edge) => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          specJson,
+        },
+      }));
+
       setNodes(nodes);
-      setEdges(edges);
+      setEdges(edgesWithSpecJson);
       setStoredGraphJson(graphJson);
     },
-    [setEdges, setNodes]
+    [setEdges, setNodes, specJson]
   );
+
+  // Update edges with specJson when specJson changes
+  useEffect(() => {
+    if (!specJson) return;
+    setEdges((currentEdges) =>
+      currentEdges.map((edge) => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          specJson,
+        },
+      }))
+    );
+  }, [specJson, setEdges]);
 
   useEffect(() => {
     if (!initialGraphJson) return;
