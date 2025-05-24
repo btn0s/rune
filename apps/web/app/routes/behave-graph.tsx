@@ -80,13 +80,16 @@ export default function BehaveGraphDemo() {
     <div className="h-screen w-screen relative">
       <div className="absolute top-[15px] left-[15px] z-10 flex flex-col gap-4 max-w-sm">
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" className="size-6" />
+          <img
+            src="/logo.svg"
+            className="size-6 border border-foreground/20 rounded-md overflow-hidden"
+          />
           <h1 className="font-bold leading-none">rune</h1>
         </div>
-        <p className="text-sm">
+        {/* <p className="text-sm">
           <span className="font-bold">rune</span> is the universal visual
-          language for translating your Figma designs into code using AI.
-        </p>
+          language for translating your Figma designs into code.
+        </p> */}
       </div>
       <div className="w-full h-full">
         <Flow
