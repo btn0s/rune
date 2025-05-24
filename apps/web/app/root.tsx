@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 
+import "@xyflow/react/dist/style.css";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
