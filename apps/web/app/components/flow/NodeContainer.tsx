@@ -25,7 +25,7 @@ const NodeContainer: React.FC<PropsWithChildren<NodeProps>> = ({
       className={cx(
         "rounded-md text-sm backdrop-blur bg-foreground/5 min-w-[200px] shadow-lg border hover:shadow-md transition-shadow",
         selected
-          ? "ring-2 ring-pink-100 ring-offset-2 ring-offset-background"
+          ? "ring-2 ring-pink-100 ring-offset-2 ring-offset-background !z-1"
           : ""
       )}
     >
