@@ -1,13 +1,7 @@
 import { useState } from "react";
-import {
-  registerCoreProfile,
-  type GraphJSON,
-  ManualLifecycleEventEmitter,
-  DefaultLogger,
-} from "@rune/behave-graph-core";
-import { Flow } from "~/components/flow";
-
-
+import { type GraphJSON } from "@rune/behave-graph-core";
+import { Flow } from "~/components/flow/Flow";
+import { createLegacyRegistry } from "~/lib/registry/project-registry";
 
 const exampleGraph: GraphJSON = {
   nodes: [
@@ -111,14 +105,7 @@ const exampleGraph: GraphJSON = {
 
 export default function BehaveGraphDemo() {
   // Create a registry with the core profile
-  const registry = registerCoreProfile({
-    values: {},
-    nodes: {},
-    dependencies: {
-      ILogger: new DefaultLogger(),
-      ILifecycleEventEmitter: new ManualLifecycleEventEmitter(),
-    },
-  });
+  const registry = createLegacyRegistry();
 
   const [currentGraph, setCurrentGraph] = useState<GraphJSON>(exampleGraph);
 

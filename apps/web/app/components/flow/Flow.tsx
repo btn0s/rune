@@ -1,5 +1,5 @@
 import type { GraphJSON, IRegistry } from "@rune/behave-graph-core";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Background, BackgroundVariant, ReactFlow } from "@xyflow/react";
 
 import { useBehaveGraphFlow } from "~/hooks/useBehaveGraphFlow";
@@ -15,14 +15,18 @@ type FlowProps = {
   initialGraph: GraphJSON;
   registry: IRegistry;
   examples: Examples;
+  onGraphChange?: (graph: GraphJSON) => void;
 };
 
 export const Flow: React.FC<FlowProps> = ({
   initialGraph: graph,
   registry,
   examples,
+  onGraphChange,
 }) => {
   const specJson = useNodeSpecJson(registry);
+  const isInitialLoad = useRef(true);
+  const lastGraphRef = useRef<GraphJSON | null>(null);
 
   const {
     nodes,
@@ -59,6 +63,29 @@ export const Flow: React.FC<FlowProps> = ({
     graphJson,
     registry,
   });
+
+  // Notify parent component when graph changes (but not on initial load)
+  useEffect(() => {
+    if (!onGraphChange || !graphJson) return;
+
+    // Skip the initial load
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      lastGraphRef.current = graphJson;
+      return;
+    }
+
+    // Only call onGraphChange if the graph actually changed
+    if (JSON.stringify(graphJson) !== JSON.stringify(lastGraphRef.current)) {
+      lastGraphRef.current = graphJson;
+      onGraphChange(graphJson);
+    }
+  }, [graphJson, onGraphChange]);
+
+  // Reset initial load flag when initialGraph prop changes
+  useEffect(() => {
+    isInitialLoad.current = true;
+  }, [graph]);
 
   // Define edge types
   const edgeTypes = {
