@@ -4,6 +4,7 @@ import { Flow } from "~/components/flow/Flow";
 import { ComponentPreview } from "~/components/flow/ComponentPreview";
 import { createFigmaImporter } from "~/lib/figma/figma-importer";
 import type { ProjectConfig } from "~/lib/project/project-generator";
+import type { RuneConfig } from "~/lib/types/project";
 import { createProjectRegistry } from "~/lib/registry/project-registry";
 import type { GraphJSON } from "@rune/behave-graph-core";
 
@@ -49,6 +50,7 @@ export default function ProjectStudio() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<ProjectConfig | null>(null);
+  const [projectConfig, setProjectConfig] = useState<RuneConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -117,6 +119,71 @@ export default function ProjectStudio() {
       }
 
       setProject(loadedProject);
+
+      // Load the project's rune.json configuration
+      try {
+        const configResponse = await fetch(`/api/projects/${id}/config`);
+        if (configResponse.ok) {
+          const config = await configResponse.json();
+          setProjectConfig(config);
+        } else {
+          // Fallback to a default config if rune.json doesn't exist
+          const defaultConfig: RuneConfig = {
+            name: loadedProject.name,
+            version: "1.0.0",
+            description: loadedProject.description,
+            rune: {
+              version: "0.1.0",
+              studio: {
+                graphFile: "./app/app.graph.json",
+                componentsDir: "./app/components",
+                outputDir: "./app/generated",
+              },
+              platform: {
+                react: {
+                  framework: "remix",
+                  uiLibrary: "shadcn",
+                  outputFormat: "tsx",
+                },
+              },
+            },
+            dependencies: {
+              "@rune/runtime-react": "^0.1.0",
+            },
+          };
+          setProjectConfig(defaultConfig);
+        }
+      } catch (configError) {
+        console.warn(
+          "Failed to load project config, using default:",
+          configError
+        );
+        // Use default config
+        const defaultConfig: RuneConfig = {
+          name: loadedProject.name,
+          version: "1.0.0",
+          description: loadedProject.description,
+          rune: {
+            version: "0.1.0",
+            studio: {
+              graphFile: "./app/app.graph.json",
+              componentsDir: "./app/components",
+              outputDir: "./app/generated",
+            },
+            platform: {
+              react: {
+                framework: "remix",
+                uiLibrary: "shadcn",
+                outputFormat: "tsx",
+              },
+            },
+          },
+          dependencies: {
+            "@rune/runtime-react": "^0.1.0",
+          },
+        };
+        setProjectConfig(defaultConfig);
+      }
 
       // Create project manager with the loaded project
       const manager = new NewProjectManager();
@@ -204,7 +271,7 @@ export default function ProjectStudio() {
     );
   }
 
-  if (error || !project || !projectManager) {
+  if (error || !project || !projectManager || !projectConfig) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -240,34 +307,9 @@ export default function ProjectStudio() {
     );
   }
 
-  // Create a mock config for the registry
-  const mockConfig = {
-    name: project.name,
-    version: "1.0.0",
-    description: project.description,
-    rune: {
-      version: "0.1.0",
-      studio: {
-        graphFile: "./app/app.graph.json",
-        componentsDir: "./app/components",
-        outputDir: "./app/generated",
-      },
-      platform: {
-        react: {
-          framework: "remix" as const,
-          uiLibrary: "shadcn" as const,
-          outputFormat: "tsx",
-        },
-      },
-    },
-    dependencies: {
-      "@rune/runtime-react": "^0.1.0",
-    },
-  };
-
-  // Create project-aware registry with platform capabilities
+  // Create project-aware registry with the actual project configuration
   const registry = createProjectRegistry(
-    mockConfig,
+    projectConfig,
     projectManager,
     createFigmaImporter()
   );
