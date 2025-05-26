@@ -38,6 +38,8 @@ export default function ProjectStudio() {
 
   // Ref to prevent infinite loops when updating graph
   const isUpdatingGraph = useRef(false);
+  // Ref to the preview iframe for message passing
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -190,6 +192,21 @@ export default function ProjectStudio() {
 
     // Update project manager's current project
     projectManager.setCurrentProject(updatedProject);
+
+    // Send graph update to preview iframe if it's loaded
+    if (previewIframeRef.current && devServerStatus === "running") {
+      try {
+        previewIframeRef.current.contentWindow?.postMessage(
+          {
+            type: "GRAPH_UPDATE",
+            graph: newGraph,
+          },
+          `http://localhost:${projectPort}`
+        );
+      } catch (error) {
+        console.warn("Failed to send graph update to preview:", error);
+      }
+    }
 
     // Check if any nodes generated preview HTML
     if (newGraph.nodes) {
@@ -376,7 +393,7 @@ export default function ProjectStudio() {
                   : "border border-border hover:bg-accent"
               }`}
             >
-              {showPreview ? "Hide Preview" : "Show Preview"}
+              {showPreview ? "Hide Live Preview" : "Show Live Preview"}
             </button>
 
             {/* Dev Server Status and Controls */}
@@ -470,11 +487,143 @@ export default function ProjectStudio() {
 
         {/* Preview Panel */}
         {showPreview && (
-          <div className="w-1/3 h-full border-l border-border bg-background overflow-auto pt-2 px-3 pb-3">
-            <ComponentPreview
-              previewHtml={previewHtml}
-              title="Component Preview"
-            />
+          <div className="w-1/3 h-full border-l border-border bg-background overflow-hidden pt-2 px-3 pb-3">
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium">Live Preview</h3>
+                <div className="flex items-center gap-2">
+                  {devServerStatus === "running" && (
+                    <a
+                      href={`http://localhost:${projectPort}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Open in new tab ↗
+                    </a>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        devServerStatus === "running"
+                          ? "bg-green-500"
+                          : devServerStatus === "starting"
+                            ? "bg-yellow-500 animate-pulse"
+                            : devServerStatus === "error"
+                              ? "bg-red-500"
+                              : "bg-gray-400"
+                      }`}
+                    ></div>
+                    <span className="text-xs text-muted-foreground">
+                      {devServerStatus === "running"
+                        ? "Live"
+                        : devServerStatus === "starting"
+                          ? "Starting..."
+                          : devServerStatus === "error"
+                            ? "Error"
+                            : "Stopped"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 border border-border rounded-md overflow-hidden bg-white">
+                {devServerStatus === "running" ? (
+                  <iframe
+                    ref={previewIframeRef}
+                    src={`http://localhost:${projectPort}`}
+                    className="w-full h-full border-0"
+                    title="Live Preview"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                    onLoad={() => {
+                      // Send initial graph state when iframe loads
+                      if (previewIframeRef.current && project?.graph) {
+                        setTimeout(() => {
+                          try {
+                            previewIframeRef.current?.contentWindow?.postMessage(
+                              {
+                                type: "GRAPH_UPDATE",
+                                graph: project.graph,
+                              },
+                              `http://localhost:${projectPort}`
+                            );
+                          } catch (error) {
+                            console.warn(
+                              "Failed to send initial graph to preview:",
+                              error
+                            );
+                          }
+                        }, 1000); // Wait a bit for the iframe to fully load
+                      }
+                    }}
+                  />
+                ) : devServerStatus === "starting" ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-sm text-muted-foreground">
+                        Starting dev server...
+                      </p>
+                    </div>
+                  </div>
+                ) : devServerStatus === "error" ? (
+                  <div className="w-full h-full flex items-center justify-center bg-red-50">
+                    <div className="text-center">
+                      <div className="w-12 h-12 mx-auto mb-4 text-red-500">
+                        <svg
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-red-600 mb-2">Server Error</p>
+                      <button
+                        onClick={() => startDevServer(project?.id || "")}
+                        className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <div className="w-12 h-12 mx-auto mb-4 text-gray-400">
+                        <svg
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Dev server stopped
+                      </p>
+                      <button
+                        onClick={() => startDevServer(project?.id || "")}
+                        disabled={devServerStarting}
+                        className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        {devServerStarting ? "Starting..." : "Start Server"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
