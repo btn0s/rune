@@ -316,6 +316,7 @@ export class ProjectGenerator {
   ): Promise<void> {
     const homeRouteContent = `import type { Route } from "./+types/home";
 ${components.map((c) => `import { ${c.name} } from "../components/${c.name}";`).join("\n")}
+import { useEffect, useState } from "react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -341,14 +342,98 @@ export function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const [componentProps, setComponentProps] = useState<Record<string, any>>({
+    ${components.map((comp) => `${comp.name}: { className: "" }`).join(",\n    ")}
+  });
+  const [graphState, setGraphState] = useState<any>(null);
+
+  // Listen for graph updates from the studio
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from the studio (localhost)
+      if (!event.origin.includes('localhost')) return;
+      
+      if (event.data.type === 'GRAPH_UPDATE') {
+        const graph = event.data.graph;
+        setGraphState(graph);
+        
+        // Process graph nodes to update component properties
+        processGraphNodes(graph);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    // Send ready signal to studio
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'PROJECT_READY' }, '*');
+    }
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+
+  const processGraphNodes = (graph: any) => {
+    if (!graph?.nodes) return;
+
+    const newProps = { ...componentProps };
+
+    // Process each node in the graph
+    graph.nodes.forEach((node: any) => {
+      if (node.type === 'project/setProperty') {
+        const componentId = node.parameters?.componentId?.value;
+        const property = node.parameters?.property?.value;
+        const value = node.parameters?.value?.value;
+
+        if (componentId && property && value !== undefined) {
+          if (!newProps[componentId]) {
+            newProps[componentId] = {};
+          }
+          newProps[componentId][property] = value;
+        }
+      }
+    });
+
+    setComponentProps(newProps);
+  };
+
+  // Simulate graph execution on component mount
+  useEffect(() => {
+    // Simulate the lifecycle/onStart trigger
+    if (graphState) {
+      console.log('Graph state updated:', graphState);
+      
+      // Find and execute onStart nodes
+      const onStartNodes = graphState.nodes?.filter((node: any) => 
+        node.type === 'lifecycle/onStart'
+      );
+      
+      if (onStartNodes?.length > 0) {
+        console.log('Executing onStart nodes...');
+        processGraphNodes(graphState);
+      }
+    }
+  }, [graphState]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 className="text-2xl font-semibold text-gray-900">Component Preview</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          {loaderData.components.length} component{loaderData.components.length !== 1 ? 's' : ''} generated
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Component Preview</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {loaderData.components.length} component{loaderData.components.length !== 1 ? 's' : ''} generated
+            </p>
+          </div>
+          {graphState && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-xs text-gray-600">Studio Connected</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Component Preview Area */}
@@ -363,6 +448,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 <div className="text-sm font-medium text-gray-700">${component.name}</div>
                 <div className="flex items-center justify-center">
                   <${component.name} 
+                    className={componentProps.${component.name}?.className || ""}
+                    {...componentProps.${component.name}}
                     ${Object.entries(component.properties)
                       .filter(([key]) => !["width", "height"].includes(key))
                       .map(([key, value]) => {
@@ -374,6 +461,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       .join("\n                    ")}
                   />
                 </div>
+                {graphState && (
+                  <div className="text-xs text-gray-500 mt-2">
+                    Graph nodes: {graphState.nodes?.length || 0}
+                  </div>
+                )}
               </div>`
                 )
                 .join("\n              ")}
@@ -386,6 +478,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         )}
       </div>
+
+      {/* Debug Panel (only show if graph is connected) */}
+      {graphState && (
+        <div className="bg-gray-100 border-t border-gray-200 p-4">
+          <details className="text-sm">
+            <summary className="cursor-pointer font-medium text-gray-700">
+              Debug Info
+            </summary>
+            <div className="mt-2 space-y-2">
+              <div>
+                <strong>Component Props:</strong>
+                <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
+                  {JSON.stringify(componentProps, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <strong>Graph State:</strong>
+                <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto max-h-32">
+                  {JSON.stringify(graphState, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </details>
+        </div>
+      )}
     </div>
   );
 }`;

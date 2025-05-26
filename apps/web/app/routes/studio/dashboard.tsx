@@ -27,7 +27,7 @@ export default function StudioDashboard() {
       setLoading(true);
       const storage = await getProjectStorage();
       const templateList = await storage.listTemplates();
-      setTemplates(templateList);
+      // setTemplates(templateList);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load templates");
     } finally {
@@ -85,12 +85,12 @@ export default function StudioDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                to="/studio/new"
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Import from Figma
-              </Link>
+              {/* <Button size="sm" asChild>
+                <Link to="/studio/new">New Project</Link>
+              </Button> */}
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/studio/settings">Settings</Link>
+              </Button>
             </div>
           </div>
         </div>

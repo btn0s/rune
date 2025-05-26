@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router";
 import {
   createFigmaImporter,
   type FigmaImportOptions,
@@ -98,28 +99,6 @@ export function ProjectManager({ onProjectCreated }: ProjectManagerProps) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStartProject = async (projectId: string) => {
-    if (!importer) return;
-
-    try {
-      await importer.startProject(projectId);
-      await loadProjects(); // Refresh to update status
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start project");
-    }
-  };
-
-  const handleStopProject = async (projectId: string) => {
-    if (!importer) return;
-
-    try {
-      await importer.stopProject(projectId);
-      await loadProjects(); // Refresh to update status
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to stop project");
     }
   };
 
@@ -382,33 +361,21 @@ export function ProjectManager({ onProjectCreated }: ProjectManagerProps) {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {project.status === "running" ? (
-                      <>
-                        <Button size="sm" asChild>
-                          <a
-                            href={`http://localhost:${project.port}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            View
-                          </a>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStopProject(project.id)}
+                    <Button size="sm" asChild>
+                      <Link to={`/studio/${project.id}`}>Open Studio</Link>
+                    </Button>
+
+                    {project.status === "running" && (
+                      <Button size="sm" variant="outline" asChild>
+                        <a
+                          href={`http://localhost:${project.port}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          Stop
-                        </Button>
-                      </>
-                    ) : project.status === "ready" ? (
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartProject(project.id)}
-                      >
-                        Start
+                          Preview
+                        </a>
                       </Button>
-                    ) : null}
+                    )}
 
                     <Button
                       variant="outline"
