@@ -19,6 +19,7 @@ const baseStyles: CSSProperties = {
   visibility: "hidden",
   height: 0,
   width: "auto",
+  maxWidth: "100px",
   whiteSpace: "pre",
 };
 

@@ -7,15 +7,49 @@ export interface FigmaNode {
   type: string;
   characters?: string;
   children?: FigmaNode[];
-  fills?: any[];
-  strokes?: any[];
-  effects?: any[];
+  fills?: Array<{
+    type: string;
+    color?: { r: number; g: number; b: number };
+    opacity?: number;
+    [key: string]: any;
+  }>;
+  strokes?: Array<{
+    type: string;
+    color?: { r: number; g: number; b: number };
+    [key: string]: any;
+  }>;
+  effects?: Array<{
+    type: string;
+    visible?: boolean;
+    offset?: { x: number; y: number };
+    radius?: number;
+    [key: string]: any;
+  }>;
   absoluteBoundingBox?: {
     x: number;
     y: number;
     width: number;
     height: number;
   };
+  cornerRadius?: number;
+  strokeWeight?: number;
+  style?: {
+    fontSize?: number;
+    fontWeight?: number;
+    lineHeight?: number;
+    letterSpacing?: number;
+    textAlignHorizontal?: "LEFT" | "CENTER" | "RIGHT" | "JUSTIFIED";
+    [key: string]: any;
+  };
+  // Auto-layout properties
+  layoutMode?: "HORIZONTAL" | "VERTICAL";
+  itemSpacing?: number;
+  paddingLeft?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  primaryAxisAlignItems?: "MIN" | "CENTER" | "MAX" | "SPACE_BETWEEN";
+  counterAxisAlignItems?: "MIN" | "CENTER" | "MAX";
   [key: string]: any;
 }
 

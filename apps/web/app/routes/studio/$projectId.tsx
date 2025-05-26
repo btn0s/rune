@@ -346,7 +346,7 @@ export default function ProjectStudio() {
 
         {/* Preview Panel */}
         {showPreview && (
-          <div className="w-1/3 h-full border-l border-border bg-background overflow-auto p-2">
+          <div className="w-1/3 h-full border-l border-border bg-background overflow-auto pt-2 px-3 pb-3">
             <ComponentPreview
               previewHtml={previewHtml}
               title="Component Preview"

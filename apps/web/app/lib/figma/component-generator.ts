@@ -1,4 +1,6 @@
 import type { FigmaNode } from "./figma-client";
+import { convertFigmaStylesToTailwind } from "./figma-tailwind-converter";
+import { enhanceWithAccessibility } from "./accessibility";
 
 export interface ComponentData {
   id: string;
@@ -7,6 +9,13 @@ export interface ComponentData {
   properties: Record<string, any>;
   reactCode: string;
   previewHtml: string;
+}
+
+interface PropDefinition {
+  name: string;
+  type: string;
+  defaultValue?: string;
+  description?: string;
 }
 
 // Helper function to convert Figma node name to a valid React component name
@@ -18,90 +27,172 @@ function toComponentName(name: string): string {
     .join("");
 }
 
-// Convert Figma styles to Tailwind classes
-function figmaStylesToTailwind(node: FigmaNode): string[] {
-  const classes: string[] = [];
+// Helper function to convert Figma node name to a valid prop name
+function toPropName(name: string): string {
+  const parts = name.replace(/[^\w\s-]/g, "").split(/[-_\s]+/);
 
-  // Handle basic styling
-  if (node.absoluteBoundingBox) {
-    const { width, height } = node.absoluteBoundingBox;
+  return (
+    parts[0].toLowerCase() +
+    parts
+      .slice(1)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join("")
+  );
+}
 
-    // Add responsive width/height if reasonable
-    if (width < 100) classes.push("w-auto");
-    else if (width < 200) classes.push("w-48");
-    else if (width < 400) classes.push("w-96");
-    else classes.push("w-full");
+// Extract potential props from Figma node
+function extractProps(node: FigmaNode): PropDefinition[] {
+  const props: PropDefinition[] = [];
 
-    if (height < 50) classes.push("h-auto");
-    else if (height < 100) classes.push("h-12");
-    else classes.push("h-auto");
+  // Text content could be a prop
+  if (node.type === "TEXT" && node.characters) {
+    const propName = toPropName(node.name) || "text";
+    props.push({
+      name: propName,
+      type: "string",
+      defaultValue: JSON.stringify(node.characters),
+      description: `Text content for ${node.name}`,
+    });
   }
 
-  // Handle fills (background colors)
-  if (node.fills && node.fills.length > 0) {
-    const fill = node.fills[0];
-    if (fill.type === "SOLID" && fill.color) {
-      const { r, g, b } = fill.color;
-      // Convert to approximate Tailwind colors
-      if (r > 0.8 && g > 0.8 && b > 0.8) classes.push("bg-gray-100");
-      else if (r < 0.2 && g < 0.2 && b < 0.2) classes.push("bg-gray-900");
-      else if (r > 0.5 && g < 0.3 && b < 0.3) classes.push("bg-red-500");
-      else if (r < 0.3 && g > 0.5 && b < 0.3) classes.push("bg-green-500");
-      else if (r < 0.3 && g < 0.3 && b > 0.5) classes.push("bg-blue-500");
-      else classes.push("bg-gray-200");
+  // If node has a "variant" property, it could be a prop
+  if (node.name.toLowerCase().includes("variant")) {
+    props.push({
+      name: "variant",
+      type: "'primary' | 'secondary' | 'outline' | 'text'",
+      defaultValue: "'primary'",
+      description: "Visual variant of the component",
+    });
+  }
+
+  // If node looks like a button, add onClick prop
+  if (
+    node.name.toLowerCase().includes("button") ||
+    node.name.toLowerCase().includes("btn")
+  ) {
+    props.push({
+      name: "onClick",
+      type: "() => void",
+      description: "Function called when button is clicked",
+    });
+  }
+
+  // If node has children that could be dynamic, add children prop
+  if (node.children && node.children.length > 0) {
+    if (
+      node.name.toLowerCase().includes("container") ||
+      node.name.toLowerCase().includes("wrapper") ||
+      node.name.toLowerCase().includes("layout") ||
+      node.name.toLowerCase().includes("section")
+    ) {
+      props.push({
+        name: "children",
+        type: "React.ReactNode",
+        description: "Child elements to render inside the component",
+      });
     }
   }
 
-  // Handle strokes (borders)
-  if (node.strokes && node.strokes.length > 0) {
-    classes.push("border");
-    const stroke = node.strokes[0];
-    if (stroke.color) {
-      const { r, g, b } = stroke.color;
-      if (r < 0.3 && g < 0.3 && b < 0.3) classes.push("border-gray-800");
-      else classes.push("border-gray-300");
-    }
+  // Add className prop for styling customization
+  props.push({
+    name: "className",
+    type: "string",
+    description: "Additional CSS classes to apply",
+  });
+
+  return props;
+}
+
+// Convert a Figma node to JSX with enhanced styling
+function figmaNodeToJSX(
+  node: FigmaNode,
+  level = 0
+): { jsx: string; props: PropDefinition[] } {
+  const tailwindClasses = convertFigmaStylesToTailwind(node);
+  const classString = tailwindClasses.join(" ");
+  const nodeProps = extractProps(node);
+
+  let jsx = "";
+
+  switch (node.type) {
+    case "TEXT":
+      const textContent = node.characters || "Text";
+      const textProp =
+        nodeProps.find((p) => p.name.includes("text")) || nodeProps[0];
+
+      jsx = `<p className="${classString}">{${textProp?.name || "text"}}</p>`;
+      break;
+
+    case "IMAGE":
+      jsx = `<img 
+  src="${node.name.toLowerCase().replace(/\s+/g, "-")}.png" 
+  className="${classString}" 
+  alt="${node.name}"
+/>`;
+      break;
+
+    case "RECTANGLE":
+    case "ELLIPSE":
+    case "POLYGON":
+    case "STAR":
+    case "VECTOR":
+    case "LINE":
+      jsx = `<div className="${classString}"></div>`;
+      break;
+
+    case "COMPONENT":
+    case "INSTANCE":
+    case "FRAME":
+    case "GROUP":
+      // Process children if they exist
+      let childrenJSX = "";
+      if (node.children && node.children.length > 0) {
+        for (const child of node.children) {
+          const childResult = figmaNodeToJSX(child, level + 1);
+          childrenJSX += `\n${"  ".repeat(level + 1)}${childResult.jsx}`;
+        }
+        childrenJSX += `\n${"  ".repeat(level)}`;
+      }
+
+      // Check if this looks like a button
+      if (
+        node.name.toLowerCase().includes("button") ||
+        node.name.toLowerCase().includes("btn")
+      ) {
+        jsx = `<button 
+  className="${classString}"
+  onClick={onClick}
+>${childrenJSX}</button>`;
+      } else {
+        // Check if we should use children prop
+        const hasChildrenProp = nodeProps.some((p) => p.name === "children");
+
+        jsx = `<div className="${classString}">
+${hasChildrenProp ? "{children}" : childrenJSX}</div>`;
+      }
+      break;
+
+    default:
+      jsx = `<div className="${classString}">
+  {/* ${node.type} component */}
+</div>`;
   }
 
-  // Handle corner radius
-  if (node.cornerRadius && node.cornerRadius > 0) {
-    if (node.cornerRadius < 4) classes.push("rounded-sm");
-    else if (node.cornerRadius < 8) classes.push("rounded");
-    else if (node.cornerRadius < 16) classes.push("rounded-lg");
-    else classes.push("rounded-xl");
-  }
-
-  // Handle text styling
-  if (node.type === "TEXT") {
-    classes.push("text-gray-900");
-
-    // Add text size based on font size
-    if (node.style?.fontSize) {
-      const fontSize = node.style.fontSize;
-      if (fontSize < 14) classes.push("text-sm");
-      else if (fontSize < 18) classes.push("text-base");
-      else if (fontSize < 24) classes.push("text-lg");
-      else if (fontSize < 32) classes.push("text-xl");
-      else classes.push("text-2xl");
-    }
-
-    // Add font weight
-    if (node.style?.fontWeight) {
-      const weight = node.style.fontWeight;
-      if (weight >= 700) classes.push("font-bold");
-      else if (weight >= 600) classes.push("font-semibold");
-      else if (weight >= 500) classes.push("font-medium");
-    }
-  }
-
-  return classes;
+  return { jsx, props: nodeProps };
 }
 
 // Convert a single Figma node to a React component
 export function figmaNodeToComponent(node: FigmaNode): ComponentData {
   const componentName = toComponentName(node.name);
-  const tailwindClasses = figmaStylesToTailwind(node);
-  const classString = tailwindClasses.join(" ");
+  const { jsx, props } = figmaNodeToJSX(node);
+
+  // Enhance with accessibility features
+  const enhancedJSX = enhanceWithAccessibility(jsx, node);
+
+  // Deduplicate props
+  const uniqueProps = props.filter(
+    (prop, index, self) => index === self.findIndex((p) => p.name === prop.name)
+  );
 
   let reactCode = "";
   let previewHtml = "";
@@ -119,23 +210,26 @@ export function figmaNodeToComponent(node: FigmaNode): ComponentData {
       reactCode = `import React from 'react';
 
 export interface ${componentName}Props {
-  text?: string;
-  className?: string;
+  ${uniqueProps
+    .map(
+      (prop) =>
+        `/** ${prop.description || ""} */
+  ${prop.name}${prop.type.includes("?") || prop.defaultValue ? "?" : ""}: ${prop.type};`
+    )
+    .join("\n  ")}
 }
 
 export function ${componentName}({ 
-  text = "${textContent}", 
-  className = "" 
+  ${uniqueProps
+    .map((p) => (p.defaultValue ? `${p.name} = ${p.defaultValue}` : p.name))
+    .join(", ")} 
 }: ${componentName}Props) {
   return (
-    <p className={\`${classString} \${className}\`}>
-      {text}
-    </p>
+    ${enhancedJSX}
   );
 }`;
 
-      previewHtml = `
-        <p class="${classString}">${textContent}</p>`;
+      previewHtml = enhancedJSX.replace(/\{[^}]+\}/g, textContent);
       break;
 
     case "RECTANGLE":
@@ -157,39 +251,26 @@ export function ${componentName}({
         reactCode = `import React from 'react';
 
 export interface ${componentName}Props {
-  text?: string;
-  onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
-  className?: string;
+  ${uniqueProps
+    .map(
+      (prop) =>
+        `/** ${prop.description || ""} */
+  ${prop.name}${prop.type.includes("?") || prop.defaultValue ? "?" : ""}: ${prop.type};`
+    )
+    .join("\n  ")}
 }
 
 export function ${componentName}({ 
-  text = "${buttonText}", 
-  onClick,
-  variant = "primary",
-  className = "" 
+  ${uniqueProps
+    .map((p) => (p.defaultValue ? `${p.name} = ${p.defaultValue}` : p.name))
+    .join(", ")} 
 }: ${componentName}Props) {
-  const baseClasses = "${classString}";
-  const variantClasses = {
-    primary: "bg-blue-500 text-white hover:bg-blue-600",
-    secondary: "bg-gray-500 text-white hover:bg-gray-600", 
-    outline: "border border-blue-500 text-blue-500 hover:bg-blue-50"
-  };
-  
   return (
-    <button 
-      className={\`\${baseClasses} \${variantClasses[variant]} \${className} px-4 py-2 rounded transition-colors\`}
-      onClick={onClick}
-    >
-      {text}
-    </button>
+    ${enhancedJSX}
   );
 }`;
 
-        previewHtml = `
-          <button class="${classString} px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-            ${buttonText}
-          </button>`;
+        previewHtml = enhancedJSX.replace(/\{[^}]+\}/g, buttonText);
       } else {
         // Generic container/div
         properties = {
@@ -200,26 +281,64 @@ export function ${componentName}({
         reactCode = `import React from 'react';
 
 export interface ${componentName}Props {
-  children?: React.ReactNode;
-  className?: string;
+  ${uniqueProps
+    .map(
+      (prop) =>
+        `/** ${prop.description || ""} */
+  ${prop.name}${prop.type.includes("?") || prop.defaultValue ? "?" : ""}: ${prop.type};`
+    )
+    .join("\n  ")}
 }
 
 export function ${componentName}({ 
-  children, 
-  className = "" 
+  ${uniqueProps
+    .map((p) => (p.defaultValue ? `${p.name} = ${p.defaultValue}` : p.name))
+    .join(", ")} 
 }: ${componentName}Props) {
   return (
-    <div className={\`${classString} \${className}\`}>
-      {children}
-    </div>
+    ${enhancedJSX}
   );
 }`;
 
-        previewHtml = `
-          <div class="${classString}">
-            <div class="text-gray-500 text-sm p-4">${componentName}</div>
-          </div>`;
+        previewHtml = enhancedJSX.replace(
+          /\{children\}/g,
+          `<div class="text-gray-500 text-sm p-4">${componentName}</div>`
+        );
       }
+      break;
+
+    case "IMAGE":
+      properties = {
+        src: `${node.name.toLowerCase().replace(/\s+/g, "-")}.png`,
+        alt: node.name,
+      };
+
+      reactCode = `import React from 'react';
+
+export interface ${componentName}Props {
+  ${uniqueProps
+    .map(
+      (prop) =>
+        `/** ${prop.description || ""} */
+  ${prop.name}${prop.type.includes("?") || prop.defaultValue ? "?" : ""}: ${prop.type};`
+    )
+    .join("\n  ")}
+}
+
+export function ${componentName}({ 
+  ${uniqueProps
+    .map((p) => (p.defaultValue ? `${p.name} = ${p.defaultValue}` : p.name))
+    .join(", ")} 
+}: ${componentName}Props) {
+  return (
+    ${enhancedJSX}
+  );
+}`;
+
+      previewHtml = enhancedJSX.replace(
+        /src="[^"]*"/g,
+        `src="https://via.placeholder.com/150"`
+      );
       break;
 
     default:
@@ -229,21 +348,29 @@ export function ${componentName}({
       reactCode = `import React from 'react';
 
 export interface ${componentName}Props {
-  className?: string;
+  ${uniqueProps
+    .map(
+      (prop) =>
+        `/** ${prop.description || ""} */
+  ${prop.name}${prop.type.includes("?") || prop.defaultValue ? "?" : ""}: ${prop.type};`
+    )
+    .join("\n  ")}
 }
 
-export function ${componentName}({ className = "" }: ${componentName}Props) {
+export function ${componentName}({ 
+  ${uniqueProps
+    .map((p) => (p.defaultValue ? `${p.name} = ${p.defaultValue}` : p.name))
+    .join(", ")} 
+}: ${componentName}Props) {
   return (
-    <div className={\`${classString} \${className}\`}>
-      {/* ${node.type} component */}
-    </div>
+    ${enhancedJSX}
   );
 }`;
 
-      previewHtml = `
-        <div class="${classString}">
-          <div class="text-gray-500 text-sm p-4">${componentName} (${node.type})</div>
-        </div>`;
+      previewHtml = enhancedJSX.replace(
+        /\{[^}]+\}/g,
+        `${componentName} (${node.type})`
+      );
   }
 
   return {
@@ -274,7 +401,11 @@ export function findComponentNodes(document: FigmaNode): FigmaNode[] {
       node.type === "INSTANCE" ||
       (node.type === "FRAME" && node.name && !node.name.startsWith("_")) ||
       (node.type === "TEXT" && node.characters) ||
-      (node.type === "RECTANGLE" && node.name.toLowerCase().includes("button"))
+      (node.type === "RECTANGLE" &&
+        node.name.toLowerCase().includes("button")) ||
+      node.type === "IMAGE" ||
+      node.type === "VECTOR" ||
+      node.type === "ELLIPSE"
     ) {
       components.push(node);
     }
