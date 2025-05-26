@@ -1,220 +1,157 @@
-import type { GraphJSON } from "@rune/behave-graph-core";
 import type {
   RuneProject,
   RuneConfig,
-  CreateProjectOptions,
   ProjectStorage,
+  CreateProjectOptions,
   ProjectTemplate,
 } from "../types/project";
-import { createDefaultTemplates } from "./project-templates";
+import type { GraphJSON } from "@rune/behave-graph-core";
+import type { ProjectConfig } from "../project/project-generator";
 
-const DB_NAME = "rune-projects";
-const DB_VERSION = 1;
-const PROJECTS_STORE = "projects";
-const TEMPLATES_STORE = "templates";
-
-class IndexedDBProjectStorage implements ProjectStorage {
-  private db: IDBDatabase | null = null;
-
-  async init(): Promise<void> {
-    if (this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-
-        // Create projects store
-        if (!db.objectStoreNames.contains(PROJECTS_STORE)) {
-          const projectStore = db.createObjectStore(PROJECTS_STORE, {
-            keyPath: "id",
-          });
-          projectStore.createIndex("platform", "platform", { unique: false });
-          projectStore.createIndex("createdAt", "createdAt", { unique: false });
-        }
-
-        // Create templates store
-        if (!db.objectStoreNames.contains(TEMPLATES_STORE)) {
-          const templateStore = db.createObjectStore(TEMPLATES_STORE, {
-            keyPath: "id",
-          });
-          templateStore.createIndex("category", "category", { unique: false });
-          templateStore.createIndex("platform", "platform", { unique: false });
-        }
-      };
-    });
-  }
-
-  private async ensureDB(): Promise<IDBDatabase> {
-    if (!this.db) {
-      await this.init();
-    }
-    if (!this.db) {
-      throw new Error("Failed to initialize database");
-    }
-    return this.db;
-  }
+// Storage implementation that facades over the Generator System
+// Updated: 2025-01-25 - Using correct API port 3002
+class GeneratorProjectStorage implements ProjectStorage {
+  private baseUrl = "http://localhost:3002/api";
 
   async listProjects(): Promise<RuneProject[]> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PROJECTS_STORE], "readonly");
-      const store = transaction.objectStore(PROJECTS_STORE);
-      const request = store.getAll();
+    try {
+      const response = await fetch(`${this.baseUrl}/projects`);
+      const data = await response.json();
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const projects = request.result as RuneProject[];
-        // Sort by most recently updated
-        projects.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        );
-        resolve(projects);
-      };
-    });
+      if (!data.success) {
+        throw new Error(data.error || "Failed to list projects");
+      }
+
+      // Convert ProjectConfig[] to RuneProject[]
+      const projects: RuneProject[] = [];
+      for (const projectConfig of data.projects) {
+        const runeProject = await this.convertToRuneProject(projectConfig);
+        projects.push(runeProject);
+      }
+
+      return projects;
+    } catch (error) {
+      console.error("Failed to list projects:", error);
+      return [];
+    }
   }
 
   async getProject(id: string): Promise<RuneProject | null> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PROJECTS_STORE], "readonly");
-      const store = transaction.objectStore(PROJECTS_STORE);
-      const request = store.get(id);
+    try {
+      // Get project metadata
+      const projectsResponse = await fetch(`${this.baseUrl}/projects`);
+      const projectsData = await projectsResponse.json();
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || null);
-    });
+      if (!projectsData.success) {
+        throw new Error(projectsData.error || "Failed to get projects");
+      }
+
+      const projectConfig = projectsData.projects.find(
+        (p: ProjectConfig) => p.id === id
+      );
+      if (!projectConfig) {
+        return null;
+      }
+
+      return await this.convertToRuneProject(projectConfig);
+    } catch (error) {
+      console.error("Failed to get project:", error);
+      return null;
+    }
   }
 
   async saveProject(project: RuneProject): Promise<void> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PROJECTS_STORE], "readwrite");
-      const store = transaction.objectStore(PROJECTS_STORE);
+    try {
+      // Save the graph
+      const graphResponse = await fetch(
+        `${this.baseUrl}/projects/${project.id}/graph`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ graph: project.graph }),
+        }
+      );
 
-      // Update timestamp
-      const updatedProject = {
-        ...project,
-        updatedAt: new Date().toISOString(),
-      };
+      if (!graphResponse.ok) {
+        throw new Error("Failed to save project graph");
+      }
 
-      const request = store.put(updatedProject);
+      // Save the config
+      const configResponse = await fetch(
+        `${this.baseUrl}/projects/${project.id}/config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config: project.config }),
+        }
+      );
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
+      if (!configResponse.ok) {
+        throw new Error("Failed to save project config");
+      }
+    } catch (error) {
+      console.error("Failed to save project:", error);
+      throw error;
+    }
   }
 
   async deleteProject(id: string): Promise<void> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PROJECTS_STORE], "readwrite");
-      const store = transaction.objectStore(PROJECTS_STORE);
-      const request = store.delete(id);
+    try {
+      const response = await fetch(`${this.baseUrl}/projects/${id}`, {
+        method: "DELETE",
+      });
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
+      if (!response.ok) {
+        throw new Error("Failed to delete project");
+      }
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+      throw error;
+    }
   }
 
   async createProject(options: CreateProjectOptions): Promise<RuneProject> {
-    const id = `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date().toISOString();
+    try {
+      const response = await fetch(`${this.baseUrl}/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: options.name,
+          description: options.description,
+          figmaUrl: options.figmaFileKey
+            ? `https://www.figma.com/file/${options.figmaFileKey}/`
+            : undefined,
+          components: [],
+        }),
+      });
 
-    // Get template if specified
-    let templateGraph: GraphJSON | undefined;
-    if (options.template) {
-      const template = await this.getTemplate(options.template);
-      templateGraph = template?.graph;
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create project");
+      }
+
+      return await this.convertToRuneProject(data.project);
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      throw error;
     }
-
-    // Create default config
-    const config: RuneConfig = {
-      name: options.name,
-      version: "1.0.0",
-      description: options.description,
-      rune: {
-        version: "0.1.0",
-        studio: {
-          graphFile: "./src/app.graph.json",
-          componentsDir: "./src/components",
-          outputDir: "./src/generated",
-        },
-        figma: options.figmaFileKey
-          ? {
-              fileKey: options.figmaFileKey,
-              nodeIds: options.figmaNodeIds || [],
-              lastSync: now,
-            }
-          : undefined,
-        platform: {
-          react:
-            options.platform === "react"
-              ? {
-                  framework: "remix",
-                  uiLibrary: "shadcn",
-                  outputFormat: "tsx",
-                }
-              : undefined,
-        },
-      },
-      dependencies: {
-        "@rune/runtime-react": "^0.1.0",
-      },
-    };
-
-    const project: RuneProject = {
-      id,
-      name: options.name,
-      description: options.description,
-      platform: options.platform,
-      graph: templateGraph || { nodes: [], variables: [], customEvents: [] },
-      components: [],
-      figmaComponents: [],
-      config,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await this.saveProject(project);
-    return project;
   }
 
   async importProject(config: RuneConfig): Promise<RuneProject> {
-    const id = `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date().toISOString();
-
-    // Determine platform from config
-    const platform = config.rune.platform.react
-      ? "react"
-      : config.rune.platform.swiftui
-        ? "swiftui"
-        : config.rune.platform.flutter
-          ? "flutter"
-          : "react";
-
-    const project: RuneProject = {
-      id,
+    // Create a project from the config
+    const project = await this.createProject({
       name: config.name,
       description: config.description,
-      platform,
-      graph: { nodes: [], variables: [], customEvents: [] }, // Will be loaded separately
-      components: [],
-      figmaComponents: [],
-      config,
-      createdAt: now,
-      updatedAt: now,
-    };
+      platform: Object.keys(config.rune.platform)[0],
+    });
 
-    await this.saveProject(project);
+    // Update with the imported config
+    await this.saveProject({
+      ...project,
+      config,
+    });
+
     return project;
   }
 
@@ -223,7 +160,7 @@ class IndexedDBProjectStorage implements ProjectStorage {
   ): Promise<{ config: RuneConfig; graph: GraphJSON }> {
     const project = await this.getProject(id);
     if (!project) {
-      throw new Error(`Project ${id} not found`);
+      throw new Error("Project not found");
     }
 
     return {
@@ -232,72 +169,128 @@ class IndexedDBProjectStorage implements ProjectStorage {
     };
   }
 
-  // Template management
-  async getTemplate(id: string): Promise<ProjectTemplate | null> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TEMPLATES_STORE], "readonly");
-      const store = transaction.objectStore(TEMPLATES_STORE);
-      const request = store.get(id);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || null);
-    });
-  }
-
   async listTemplates(): Promise<ProjectTemplate[]> {
-    const db = await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TEMPLATES_STORE], "readonly");
-      const store = transaction.objectStore(TEMPLATES_STORE);
-      const request = store.getAll();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result as ProjectTemplate[]);
-    });
+    // For now, return empty array - templates could be implemented later
+    return [];
   }
 
-  async initializeTemplates(): Promise<void> {
-    const existingTemplates = await this.listTemplates();
-    if (existingTemplates.length > 0) return; // Already initialized
+  async getTemplate(id: string): Promise<ProjectTemplate | null> {
+    // For now, return null - templates could be implemented later
+    return null;
+  }
 
-    const templates = createDefaultTemplates();
-    const db = await this.ensureDB();
+  // Helper method to convert ProjectConfig to RuneProject
+  private async convertToRuneProject(
+    projectConfig: ProjectConfig
+  ): Promise<RuneProject> {
+    try {
+      // Get the project's config and graph
+      const [configResponse, graphResponse] = await Promise.all([
+        fetch(`${this.baseUrl}/projects/${projectConfig.id}/config`),
+        fetch(`${this.baseUrl}/projects/${projectConfig.id}/graph`),
+      ]);
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TEMPLATES_STORE], "readwrite");
-      const store = transaction.objectStore(TEMPLATES_STORE);
+      const configData = await configResponse.json();
+      const graphData = await graphResponse.json();
 
-      let completed = 0;
-      const total = templates.length;
+      const config: RuneConfig = configData.success
+        ? configData.config
+        : this.createDefaultConfig(projectConfig);
+      const graph: GraphJSON = graphData.success
+        ? graphData.graph
+        : { nodes: [], variables: [], customEvents: [] };
 
-      if (total === 0) {
-        resolve();
-        return;
-      }
+      // Convert ComponentData[] to ProjectComponent[]
+      const components = projectConfig.components.map((comp) => ({
+        id: comp.id || comp.name,
+        name: comp.name,
+        type: "figma" as const,
+        metadata: {
+          figmaNodeId: comp.id,
+          category: comp.type,
+          tags: [],
+        },
+        properties: Object.entries(comp.properties || {}).map(
+          ([name, value]) => ({
+            name,
+            type: (typeof value === "string"
+              ? "string"
+              : typeof value === "number"
+                ? "number"
+                : typeof value === "boolean"
+                  ? "boolean"
+                  : "string") as any,
+            defaultValue: value,
+            description: `Property ${name} from Figma component`,
+          })
+        ),
+      }));
 
-      templates.forEach((template: ProjectTemplate) => {
-        const request = store.put(template);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          completed++;
-          if (completed === total) {
-            resolve();
-          }
-        };
-      });
-    });
+      const runeProject: RuneProject = {
+        id: projectConfig.id,
+        name: projectConfig.name,
+        description: projectConfig.description,
+        platform: "react", // Default to react for now
+        graph,
+        components,
+        figmaComponents: [], // Could be populated from components if needed
+        config,
+        createdAt: new Date().toISOString(), // We don't have this from ProjectConfig
+        updatedAt: new Date().toISOString(),
+      };
+
+      return runeProject;
+    } catch (error) {
+      console.error("Failed to convert ProjectConfig to RuneProject:", error);
+      throw error;
+    }
+  }
+
+  private createDefaultConfig(projectConfig: ProjectConfig): RuneConfig {
+    return {
+      name: projectConfig.name,
+      version: "1.0.0",
+      description: projectConfig.description,
+      rune: {
+        version: "0.1.0",
+        studio: {
+          graphFile: "./app/app.graph.json",
+          componentsDir: "./app/components",
+          outputDir: "./app/generated",
+        },
+        figma: projectConfig.figmaUrl
+          ? {
+              fileKey: this.extractFigmaFileKey(projectConfig.figmaUrl),
+              nodeIds: [],
+              lastSync: new Date().toISOString(),
+            }
+          : undefined,
+        platform: {
+          react: {
+            framework: "remix",
+            uiLibrary: "shadcn",
+            outputFormat: "tsx",
+          },
+        },
+      },
+      dependencies: {
+        "@rune/runtime-react": "^0.1.0",
+      },
+    };
+  }
+
+  private extractFigmaFileKey(figmaUrl: string): string {
+    const match = figmaUrl.match(/\/file\/([a-zA-Z0-9]+)/);
+    return match ? match[1] : "";
   }
 }
 
 // Singleton instance
-let storage: IndexedDBProjectStorage | null = null;
+let projectStorage: ProjectStorage | null = null;
 
 export async function getProjectStorage(): Promise<ProjectStorage> {
-  if (!storage) {
-    storage = new IndexedDBProjectStorage();
-    await storage.init();
-    await storage.initializeTemplates();
+  if (!projectStorage) {
+    projectStorage = new GeneratorProjectStorage();
   }
-  return storage;
+  return projectStorage;
 }

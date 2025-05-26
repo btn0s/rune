@@ -1,5 +1,7 @@
 import express from "express";
 import { ProjectGenerator } from "./app/lib/project/project-generator";
+import * as fs from "fs/promises";
+import * as path from "path";
 
 const app = express();
 
@@ -55,6 +57,143 @@ app.get("/api/projects", async (req: any, res: any) => {
     res.json({ success: true, projects });
   } catch (error) {
     console.error("Error listing projects:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Get project's rune.json configuration
+app.get("/api/projects/:id/config", async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const projectPath = path.join("generated-projects", id, "rune.json");
+
+    try {
+      const configContent = await fs.readFile(projectPath, "utf-8");
+      const config = JSON.parse(configContent);
+      res.json({ success: true, config });
+    } catch (fileError) {
+      // If rune.json doesn't exist, return a default config
+      const projects = await projectGenerator.listProjects();
+      const project = projects.find((p) => p.id === id);
+
+      if (!project) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Project not found" });
+      }
+
+      // Create default config based on project
+      const defaultConfig = {
+        name: project.name,
+        version: "1.0.0",
+        description: project.description,
+        rune: {
+          version: "0.1.0",
+          studio: {
+            graphFile: "./app/app.graph.json",
+            componentsDir: "./app/components",
+            outputDir: "./app/generated",
+          },
+          figma: project.figmaUrl
+            ? {
+                fileKey: extractFigmaFileKey(project.figmaUrl),
+                nodeIds: [],
+                lastSync: new Date().toISOString(),
+              }
+            : undefined,
+          platform: {
+            react: {
+              framework: "remix",
+              uiLibrary: "shadcn",
+              outputFormat: "tsx",
+            },
+          },
+        },
+        dependencies: {
+          "@rune/runtime-react": "^0.1.0",
+        },
+      };
+
+      res.json({ success: true, config: defaultConfig });
+    }
+  } catch (error) {
+    console.error("Error getting project config:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Update project's rune.json configuration
+app.put("/api/projects/:id/config", async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { config } = req.body;
+    const projectPath = path.join("generated-projects", id, "rune.json");
+
+    await fs.writeFile(projectPath, JSON.stringify(config, null, 2));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating project config:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Get project's graph
+app.get("/api/projects/:id/graph", async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const graphPath = path.join(
+      "generated-projects",
+      id,
+      "app",
+      "app.graph.json"
+    );
+
+    try {
+      const graphContent = await fs.readFile(graphPath, "utf-8");
+      const graph = JSON.parse(graphContent);
+      res.json({ success: true, graph });
+    } catch (fileError) {
+      // If graph doesn't exist, return empty graph
+      const emptyGraph = {
+        nodes: [],
+        variables: [],
+        customEvents: [],
+      };
+      res.json({ success: true, graph: emptyGraph });
+    }
+  } catch (error) {
+    console.error("Error getting project graph:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Update project's graph
+app.post("/api/projects/:id/graph", async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { graph } = req.body;
+    const projectPath = path.join("generated-projects", id);
+    const graphPath = path.join(projectPath, "app", "app.graph.json");
+
+    // Ensure app directory exists
+    await fs.mkdir(path.join(projectPath, "app"), { recursive: true });
+
+    await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating project graph:", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -155,6 +294,11 @@ function generateProjectId(baseName: string): string {
     .replace(/^-|-$/g, "");
 
   return `${cleanName}-${timestamp}-${randomSuffix}`;
+}
+
+function extractFigmaFileKey(figmaUrl: string): string {
+  const match = figmaUrl.match(/\/file\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : "";
 }
 
 // Start the API server

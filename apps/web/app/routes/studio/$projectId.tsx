@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import { Flow } from "~/components/flow/Flow";
 import { ComponentPreview } from "~/components/flow/ComponentPreview";
-import { createFigmaImporter } from "~/lib/figma/figma-importer";
-import type { ProjectConfig } from "~/lib/project/project-generator";
-import type { RuneConfig } from "~/lib/types/project";
+import { getProjectStorage } from "~/lib/storage/project-storage";
+import type { RuneProject } from "~/lib/types/project";
 import { createProjectRegistry } from "~/lib/registry/project-registry";
+import { ProjectManagerImpl } from "~/lib/project/project-manager";
+import { createFigmaImporter } from "~/lib/figma/figma-importer";
 import type { GraphJSON } from "@rune/behave-graph-core";
 
 export function meta() {
@@ -15,47 +16,15 @@ export function meta() {
   ];
 }
 
-// Simple project manager for the new system
-class NewProjectManager {
-  private currentProject: ProjectConfig | null = null;
-
-  getCurrentProject(): ProjectConfig | null {
-    return this.currentProject;
-  }
-
-  setCurrentProject(project: ProjectConfig): void {
-    this.currentProject = project;
-  }
-
-  async saveProject(project: ProjectConfig): Promise<void> {
-    // For now, just update the current project
-    // In the future, this could save to the project's rune.json file
-    this.currentProject = project;
-    console.log("Project saved:", project);
-  }
-
-  async loadProject(id: string): Promise<ProjectConfig | null> {
-    // This would be implemented by calling the server API
-    // For now, return null as we'll load via the importer
-    return null;
-  }
-
-  async updateProjectGraph(projectId: string, graph: any): Promise<void> {
-    // TODO: Save graph to the project's app.graph.json file via API
-    console.log("Updating project graph:", projectId, graph);
-  }
-}
-
 export default function ProjectStudio() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [project, setProject] = useState<ProjectConfig | null>(null);
-  const [projectConfig, setProjectConfig] = useState<RuneConfig | null>(null);
+  const [project, setProject] = useState<RuneProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [projectManager, setProjectManager] =
-    useState<NewProjectManager | null>(null);
+    useState<ProjectManagerImpl | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(
     '<div class="p-4 text-gray-500">No components generated yet</div>'
@@ -103,15 +72,9 @@ export default function ProjectStudio() {
     try {
       setLoading(true);
 
-      // Use the Figma importer to load projects (same as project-manager.tsx)
-      const importer = createFigmaImporter();
-      if (!importer) {
-        setError("Figma token not configured");
-        return;
-      }
-
-      const projects = await importer.listProjects();
-      const loadedProject = projects.find((p) => p.id === id);
+      // Use the Storage System (which now facades over the Generator System)
+      const storage = await getProjectStorage();
+      const loadedProject = await storage.getProject(id);
 
       if (!loadedProject) {
         setError("Project not found");
@@ -120,74 +83,8 @@ export default function ProjectStudio() {
 
       setProject(loadedProject);
 
-      // Load the project's rune.json configuration
-      try {
-        const configResponse = await fetch(`/api/projects/${id}/config`);
-        if (configResponse.ok) {
-          const config = await configResponse.json();
-          setProjectConfig(config);
-        } else {
-          // Fallback to a default config if rune.json doesn't exist
-          const defaultConfig: RuneConfig = {
-            name: loadedProject.name,
-            version: "1.0.0",
-            description: loadedProject.description,
-            rune: {
-              version: "0.1.0",
-              studio: {
-                graphFile: "./app/app.graph.json",
-                componentsDir: "./app/components",
-                outputDir: "./app/generated",
-              },
-              platform: {
-                react: {
-                  framework: "remix",
-                  uiLibrary: "shadcn",
-                  outputFormat: "tsx",
-                },
-              },
-            },
-            dependencies: {
-              "@rune/runtime-react": "^0.1.0",
-            },
-          };
-          setProjectConfig(defaultConfig);
-        }
-      } catch (configError) {
-        console.warn(
-          "Failed to load project config, using default:",
-          configError
-        );
-        // Use default config
-        const defaultConfig: RuneConfig = {
-          name: loadedProject.name,
-          version: "1.0.0",
-          description: loadedProject.description,
-          rune: {
-            version: "0.1.0",
-            studio: {
-              graphFile: "./app/app.graph.json",
-              componentsDir: "./app/components",
-              outputDir: "./app/generated",
-            },
-            platform: {
-              react: {
-                framework: "remix",
-                uiLibrary: "shadcn",
-                outputFormat: "tsx",
-              },
-            },
-          },
-          dependencies: {
-            "@rune/runtime-react": "^0.1.0",
-          },
-        };
-        setProjectConfig(defaultConfig);
-      }
-
       // Create project manager with the loaded project
-      const manager = new NewProjectManager();
-      manager.setCurrentProject(loadedProject);
+      const manager = new ProjectManagerImpl(loadedProject);
       setProjectManager(manager);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load project");
@@ -215,8 +112,16 @@ export default function ProjectStudio() {
     // Set flag to prevent infinite loop
     isUpdatingGraph.current = true;
 
+    const updatedProject = {
+      ...project,
+      graph: newGraph,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setProject(updatedProject);
+
     // Update project manager's current project
-    projectManager.updateProjectGraph(project.id, newGraph);
+    projectManager.setCurrentProject(updatedProject);
 
     // Check if any nodes generated preview HTML
     if (newGraph.nodes) {
@@ -271,7 +176,7 @@ export default function ProjectStudio() {
     );
   }
 
-  if (error || !project || !projectManager || !projectConfig) {
+  if (error || !project || !projectManager) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -308,14 +213,16 @@ export default function ProjectStudio() {
   }
 
   // Create project-aware registry with the actual project configuration
+  const figmaImporter = createFigmaImporter();
   const registry = createProjectRegistry(
-    projectConfig,
+    project.config,
     projectManager,
-    createFigmaImporter()
+    figmaImporter || undefined
   );
 
   // Create examples object with project-specific examples
   const examples = {
+    "Current Project": project.graph,
     "Figma Import Demo": {
       nodes: [
         {
@@ -323,9 +230,9 @@ export default function ProjectStudio() {
           type: "figma/import",
           parameters: {
             figmaUrl: {
-              value:
-                project.figmaUrl ||
-                "https://www.figma.com/file/example123/Sample-Design",
+              value: project.config.rune.figma?.fileKey
+                ? `https://www.figma.com/file/${project.config.rune.figma.fileKey}/`
+                : "https://www.figma.com/file/example123/Sample-Design",
             },
             figmaToken: {
               value: "",
@@ -427,7 +334,7 @@ export default function ProjectStudio() {
           className={`${showPreview ? "w-2/3" : "w-full"} h-full transition-all duration-300`}
         >
           <Flow
-            initialGraph={{ nodes: [], variables: [], customEvents: [] }}
+            initialGraph={project.graph}
             registry={registry}
             examples={examples}
             onGraphChange={handleGraphChange}
