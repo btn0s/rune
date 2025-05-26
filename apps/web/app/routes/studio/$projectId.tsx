@@ -7,6 +7,7 @@ import type { RuneProject } from "~/lib/types/project";
 import { createProjectRegistry } from "~/lib/registry/project-registry";
 import { ProjectManagerImpl } from "~/lib/project/project-manager";
 import { createFigmaImporter } from "~/lib/figma/figma-importer";
+import { projectApi } from "~/lib/project/project-api";
 import type { GraphJSON } from "@rune/behave-graph-core";
 
 export function meta() {
@@ -29,6 +30,11 @@ export default function ProjectStudio() {
   const [previewHtml, setPreviewHtml] = useState(
     '<div class="p-4 text-gray-500">No components generated yet</div>'
   );
+  const [devServerStarting, setDevServerStarting] = useState(false);
+  const [devServerStatus, setDevServerStatus] = useState<
+    "stopped" | "starting" | "running" | "error"
+  >("stopped");
+  const [projectPort, setProjectPort] = useState<number>(3001);
 
   // Ref to prevent infinite loops when updating graph
   const isUpdatingGraph = useRef(false);
@@ -86,10 +92,72 @@ export default function ProjectStudio() {
       // Create project manager with the loaded project
       const manager = new ProjectManagerImpl(loadedProject);
       setProjectManager(manager);
+
+      // Check current dev server status
+      await checkDevServerStatus(id);
+
+      // Auto-start the dev server if it's not already running
+      const projects = await projectApi.listProjects();
+      const currentProject = projects.find((p) => p.id === id);
+
+      if (currentProject && currentProject.status !== "running") {
+        await startDevServer(id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load project");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startDevServer = async (projectId: string) => {
+    try {
+      setDevServerStarting(true);
+      setDevServerStatus("starting");
+
+      const port = await projectApi.startProject(projectId);
+      setProjectPort(port);
+
+      setDevServerStatus("running");
+      console.log(
+        `Dev server started for project ${projectId} on port ${port}`
+      );
+    } catch (err) {
+      console.error("Failed to start dev server:", err);
+      setDevServerStatus("error");
+      // Don't show error to user as this is auto-start, they can manually start if needed
+    } finally {
+      setDevServerStarting(false);
+    }
+  };
+
+  const checkDevServerStatus = async (projectId: string) => {
+    try {
+      // Get project list to check current status
+      const projects = await projectApi.listProjects();
+      const currentProject = projects.find((p) => p.id === projectId);
+
+      if (currentProject) {
+        setProjectPort(currentProject.port);
+        if (currentProject.status === "running") {
+          setDevServerStatus("running");
+        } else {
+          setDevServerStatus("stopped");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to check dev server status:", err);
+      setDevServerStatus("stopped");
+    }
+  };
+
+  const stopDevServer = async (projectId: string) => {
+    try {
+      await projectApi.stopProject(projectId);
+      setDevServerStatus("stopped");
+      console.log(`Dev server stopped for project ${projectId}`);
+    } catch (err) {
+      console.error("Failed to stop dev server:", err);
     }
   };
 
@@ -310,6 +378,65 @@ export default function ProjectStudio() {
             >
               {showPreview ? "Hide Preview" : "Show Preview"}
             </button>
+
+            {/* Dev Server Status and Controls */}
+            <div className="flex items-center gap-2">
+              {devServerStatus === "running" && (
+                <a
+                  href={`http://localhost:${projectPort}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  View Live
+                </a>
+              )}
+
+              <div className="flex items-center gap-1">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    devServerStatus === "running"
+                      ? "bg-green-500"
+                      : devServerStatus === "starting"
+                        ? "bg-yellow-500 animate-pulse"
+                        : devServerStatus === "error"
+                          ? "bg-red-500"
+                          : "bg-gray-400"
+                  }`}
+                ></div>
+                <span className="text-xs text-muted-foreground">
+                  {devServerStatus === "running"
+                    ? "Live"
+                    : devServerStatus === "starting"
+                      ? "Starting..."
+                      : devServerStatus === "error"
+                        ? "Error"
+                        : "Stopped"}
+                </span>
+              </div>
+
+              {devServerStatus !== "running" &&
+                devServerStatus !== "starting" && (
+                  <button
+                    onClick={() => startDevServer(project?.id || "")}
+                    disabled={devServerStarting || !project}
+                    className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
+                  >
+                    Start Server
+                  </button>
+                )}
+
+              {devServerStatus === "running" && (
+                <button
+                  onClick={() => stopDevServer(project?.id || "")}
+                  disabled={!project}
+                  className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
+                >
+                  Stop Server
+                </button>
+              )}
+            </div>
+
             <button
               onClick={handleSaveProject}
               disabled={saving}

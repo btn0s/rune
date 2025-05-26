@@ -13,6 +13,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   project?: ProjectConfig;
   projects?: ProjectConfig[];
+  port?: number;
   error?: string;
 }
 
@@ -48,7 +49,7 @@ class ProjectApiClient {
     return result.projects;
   }
 
-  async startProject(projectId: string): Promise<void> {
+  async startProject(projectId: string): Promise<number> {
     const response = await fetch(
       `${this.baseUrl}/projects/${projectId}/start`,
       {
@@ -61,6 +62,12 @@ class ProjectApiClient {
     if (!result.success) {
       throw new Error(result.error || "Failed to start project");
     }
+
+    if (typeof result.port !== "number") {
+      throw new Error("port is not defined");
+    }
+
+    return result.port;
   }
 
   async stopProject(projectId: string): Promise<void> {

@@ -2,6 +2,7 @@ import { exec, spawn } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs/promises";
 import * as path from "path";
+import * as net from "net";
 import type { ComponentData } from "../figma/component-generator";
 
 const execAsync = promisify(exec);
@@ -72,7 +73,7 @@ export class ProjectGenerator {
   async createProject(
     config: Omit<ProjectConfig, "port" | "status">
   ): Promise<ProjectConfig> {
-    const projectPath = path.join(this.projectsDir, config.id);
+    const projectPath = path.join(process.cwd(), this.projectsDir, config.id);
     const port = await this.findAvailablePort();
 
     const projectConfig: ProjectConfig = {
@@ -96,7 +97,7 @@ export class ProjectGenerator {
       await this.installDependencies(projectPath);
 
       // Create components directory and initial files
-      await this.setupProjectStructure(projectPath, config);
+      await this.setupProjectStructure(projectPath, config, port);
 
       // Generate initial components if provided
       if (config.components.length > 0) {
@@ -112,14 +113,19 @@ export class ProjectGenerator {
     }
   }
 
-  async startDevServer(projectId: string, port: number): Promise<void> {
+  async startDevServer(projectId: string): Promise<number> {
     const projectPath = path.join(this.projectsDir, projectId);
+    const port = await this.findAvailablePort();
+
+    console.log(
+      `Starting dev server for ${projectId} at ${projectPath} on port ${port}`
+    );
 
     try {
-      // Start Vite dev server in background using spawn
+      // Start Vite dev server in background using spawn with specific port
       const child = spawn(
         "npm",
-        ["run", "dev", "--", "--port", port.toString(), "--host"],
+        ["run", "dev", "--", "--host", "--port", port.toString()],
         {
           cwd: projectPath,
           detached: true,
@@ -130,13 +136,17 @@ export class ProjectGenerator {
       // Unref the child process so the parent can exit
       child.unref();
 
-      // Store process ID for later cleanup
+      // Store process ID and port for later cleanup
       await fs.writeFile(
         path.join(projectPath, ".dev-server.pid"),
-        child.pid?.toString() || ""
+        JSON.stringify({ pid: child.pid, port })
       );
 
+      // Update the project's rune.json with the actual port
+      await this.updateProjectPort(projectPath, port);
+
       console.log(`Dev server started for ${projectId} on port ${port}`);
+      return port;
     } catch (error) {
       console.error("Error starting dev server:", error);
       throw error;
@@ -148,10 +158,22 @@ export class ProjectGenerator {
     const pidFile = path.join(projectPath, ".dev-server.pid");
 
     try {
-      const pid = await fs.readFile(pidFile, "utf-8");
-      if (pid) {
-        process.kill(parseInt(pid));
-        await fs.unlink(pidFile);
+      const pidData = await fs.readFile(pidFile, "utf-8");
+      if (pidData) {
+        let pid: number;
+        try {
+          // Try parsing as JSON first (new format)
+          const parsed = JSON.parse(pidData);
+          pid = parsed.pid;
+        } catch {
+          // Fallback to old format (plain string)
+          pid = parseInt(pidData);
+        }
+
+        if (pid && !isNaN(pid)) {
+          process.kill(pid);
+          await fs.unlink(pidFile);
+        }
       }
     } catch (error) {
       // PID file might not exist or process already stopped
@@ -198,7 +220,8 @@ export class ProjectGenerator {
 
   private async setupProjectStructure(
     projectPath: string,
-    config: Omit<ProjectConfig, "port" | "status">
+    config: Omit<ProjectConfig, "port" | "status">,
+    port: number
   ): Promise<void> {
     // Create components directory in app folder (React Router structure)
     await fs.mkdir(path.join(projectPath, "app", "components"), {
@@ -240,7 +263,7 @@ export class ProjectGenerator {
         // Internal project metadata
         project: {
           id: config.id,
-          port: await this.findAvailablePort(),
+          port: port,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           components: config.components.map((comp) => ({
@@ -513,35 +536,69 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     );
   }
 
+  /**
+   * Checks if a port is available by attempting to bind to it
+   */
+  private async isPortAvailable(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const server = net.createServer();
+
+      server.listen(port, () => {
+        server.once("close", () => {
+          resolve(true);
+        });
+        server.close();
+      });
+
+      server.on("error", () => {
+        resolve(false);
+      });
+    });
+  }
+
+  /**
+   * Finds an available port starting from basePort
+   * Uses actual network binding to ensure port is truly available
+   */
   private async findAvailablePort(): Promise<number> {
-    // Simple port finding - in production, you'd want something more robust
     let port = this.basePort;
-    const usedPorts = new Set<number>();
+    const maxAttempts = 100; // Prevent infinite loops
+    let attempts = 0;
 
-    // Check existing projects for used ports
-    try {
-      const projects = await fs.readdir(this.projectsDir);
-      for (const project of projects) {
-        try {
-          const configPath = path.join(this.projectsDir, project, "rune.json");
-          const runeConfig = JSON.parse(await fs.readFile(configPath, "utf-8"));
-          const projectPort = runeConfig.rune?.project?.port;
-          if (projectPort) {
-            usedPorts.add(projectPort);
-          }
-        } catch {
-          // Ignore errors reading project configs
-        }
+    while (attempts < maxAttempts) {
+      const isAvailable = await this.isPortAvailable(port);
+      if (isAvailable) {
+        return port;
       }
-    } catch {
-      // Projects directory doesn't exist yet
-    }
-
-    while (usedPorts.has(port)) {
       port++;
+      attempts++;
     }
 
-    return port;
+    throw new Error(
+      `Could not find an available port after ${maxAttempts} attempts starting from ${this.basePort}`
+    );
+  }
+
+  /**
+   * Updates the port in an existing project's rune.json
+   */
+  private async updateProjectPort(
+    projectPath: string,
+    port: number
+  ): Promise<void> {
+    try {
+      const configPath = path.join(projectPath, "rune.json");
+      const runeConfig = JSON.parse(await fs.readFile(configPath, "utf-8"));
+
+      if (runeConfig.rune?.project) {
+        runeConfig.rune.project.port = port;
+        runeConfig.rune.project.updatedAt = new Date().toISOString();
+
+        await fs.writeFile(configPath, JSON.stringify(runeConfig, null, 2));
+      }
+    } catch (error) {
+      console.warn("Could not update project port:", error);
+    }
   }
 
   async listProjects(): Promise<ProjectConfig[]> {
@@ -567,16 +624,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           let status: ProjectConfig["status"] = "ready";
 
           try {
-            const pid = await fs.readFile(pidFile, "utf-8");
-            if (pid) {
-              // Check if process is still running
+            const pidData = await fs.readFile(pidFile, "utf-8");
+            if (pidData) {
+              let pid: number;
               try {
-                process.kill(parseInt(pid), 0);
-                status = "running";
+                // Try parsing as JSON first (new format)
+                const parsed = JSON.parse(pidData);
+                pid = parsed.pid;
               } catch {
-                status = "ready";
-                // Clean up stale PID file
-                await fs.unlink(pidFile);
+                // Fallback to old format (plain string)
+                pid = parseInt(pidData);
+              }
+
+              if (pid && !isNaN(pid)) {
+                // Check if process is still running
+                try {
+                  process.kill(pid, 0);
+                  status = "running";
+                } catch {
+                  status = "ready";
+                  // Clean up stale PID file
+                  await fs.unlink(pidFile);
+                }
               }
             }
           } catch {

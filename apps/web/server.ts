@@ -213,8 +213,9 @@ app.post("/api/projects/:id/start", async (req: any, res: any) => {
         .json({ success: false, error: "Project not found" });
     }
 
-    await projectGenerator.startDevServer(id, project.port);
-    res.json({ success: true });
+    const port = await projectGenerator.startDevServer(id);
+    console.log(`Dev server started for project ${id} on port ${port}`);
+    res.json({ success: true, port });
   } catch (error) {
     console.error("Error starting project:", error);
     res.status(500).json({
@@ -266,7 +267,7 @@ app.put("/api/projects/:id/components", async (req: any, res: any) => {
         .json({ success: false, error: "Project not found" });
     }
 
-    const projectPath = `generated-projects/${id}`;
+    const projectPath = path.join("..", "generated-projects", id);
     await projectGenerator.writeComponents(projectPath, components);
 
     res.json({ success: true });
@@ -302,7 +303,7 @@ function extractFigmaFileKey(figmaUrl: string): string {
 }
 
 // Start the API server
-const port = process.env.API_PORT || 3001;
+const port = process.env.API_PORT || 3002;
 app.listen(port, () => {
   console.log(
     `Project Generation API Server running on http://localhost:${port}`
