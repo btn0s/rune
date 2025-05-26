@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import { Flow } from "~/components/flow/Flow";
 import { ComponentPreview } from "~/components/flow/ComponentPreview";
-import { getProjectStorage } from "~/lib/storage/project-storage";
-import type { RuneProject } from "~/lib/types/project";
+import { createFigmaImporter } from "~/lib/figma/figma-importer";
+import type { ProjectConfig } from "~/lib/project/project-generator";
 import { createProjectRegistry } from "~/lib/registry/project-registry";
-import { ProjectManagerImpl } from "~/lib/project/project-manager";
 import type { GraphJSON } from "@rune/behave-graph-core";
 
 export function meta() {
@@ -15,15 +14,46 @@ export function meta() {
   ];
 }
 
+// Simple project manager for the new system
+class NewProjectManager {
+  private currentProject: ProjectConfig | null = null;
+
+  getCurrentProject(): ProjectConfig | null {
+    return this.currentProject;
+  }
+
+  setCurrentProject(project: ProjectConfig): void {
+    this.currentProject = project;
+  }
+
+  async saveProject(project: ProjectConfig): Promise<void> {
+    // For now, just update the current project
+    // In the future, this could save to the project's rune.json file
+    this.currentProject = project;
+    console.log("Project saved:", project);
+  }
+
+  async loadProject(id: string): Promise<ProjectConfig | null> {
+    // This would be implemented by calling the server API
+    // For now, return null as we'll load via the importer
+    return null;
+  }
+
+  async updateProjectGraph(projectId: string, graph: any): Promise<void> {
+    // TODO: Save graph to the project's app.graph.json file via API
+    console.log("Updating project graph:", projectId, graph);
+  }
+}
+
 export default function ProjectStudio() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [project, setProject] = useState<RuneProject | null>(null);
+  const [project, setProject] = useState<ProjectConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [projectManager, setProjectManager] =
-    useState<ProjectManagerImpl | null>(null);
+    useState<NewProjectManager | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(
     '<div class="p-4 text-gray-500">No components generated yet</div>'
@@ -70,8 +100,16 @@ export default function ProjectStudio() {
   const loadProject = async (id: string) => {
     try {
       setLoading(true);
-      const storage = await getProjectStorage();
-      const loadedProject = await storage.getProject(id);
+
+      // Use the Figma importer to load projects (same as project-manager.tsx)
+      const importer = createFigmaImporter();
+      if (!importer) {
+        setError("Figma token not configured");
+        return;
+      }
+
+      const projects = await importer.listProjects();
+      const loadedProject = projects.find((p) => p.id === id);
 
       if (!loadedProject) {
         setError("Project not found");
@@ -81,7 +119,8 @@ export default function ProjectStudio() {
       setProject(loadedProject);
 
       // Create project manager with the loaded project
-      const manager = new ProjectManagerImpl(loadedProject);
+      const manager = new NewProjectManager();
+      manager.setCurrentProject(loadedProject);
       setProjectManager(manager);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load project");
@@ -109,16 +148,8 @@ export default function ProjectStudio() {
     // Set flag to prevent infinite loop
     isUpdatingGraph.current = true;
 
-    const updatedProject = {
-      ...project,
-      graph: newGraph,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setProject(updatedProject);
-
     // Update project manager's current project
-    projectManager.setCurrentProject(updatedProject);
+    projectManager.updateProjectGraph(project.id, newGraph);
 
     // Check if any nodes generated preview HTML
     if (newGraph.nodes) {
@@ -209,16 +240,40 @@ export default function ProjectStudio() {
     );
   }
 
+  // Create a mock config for the registry
+  const mockConfig = {
+    name: project.name,
+    version: "1.0.0",
+    description: project.description,
+    rune: {
+      version: "0.1.0",
+      studio: {
+        graphFile: "./app/app.graph.json",
+        componentsDir: "./app/components",
+        outputDir: "./app/generated",
+      },
+      platform: {
+        react: {
+          framework: "remix" as const,
+          uiLibrary: "shadcn" as const,
+          outputFormat: "tsx",
+        },
+      },
+    },
+    dependencies: {
+      "@rune/runtime-react": "^0.1.0",
+    },
+  };
+
   // Create project-aware registry with platform capabilities
   const registry = createProjectRegistry(
-    project.config,
-    projectManager
-    // TODO: Add Figma importer when available
+    mockConfig,
+    projectManager,
+    createFigmaImporter()
   );
 
   // Create examples object with project-specific examples
   const examples = {
-    "Current Project": project.graph,
     "Figma Import Demo": {
       nodes: [
         {
@@ -226,7 +281,9 @@ export default function ProjectStudio() {
           type: "figma/import",
           parameters: {
             figmaUrl: {
-              value: "https://www.figma.com/file/example123/Sample-Design",
+              value:
+                project.figmaUrl ||
+                "https://www.figma.com/file/example123/Sample-Design",
             },
             figmaToken: {
               value: "",
@@ -288,15 +345,12 @@ export default function ProjectStudio() {
             <div>
               <h1 className="font-medium text-sm">{project.name}</h1>
               <p className="text-xs text-muted-foreground">
-                {project.platform} • {project.components.length} components
+                {project.components.length} components
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="text-xs text-muted-foreground px-2 py-1 bg-accent rounded">
-              Project Mode
-            </div>
             <button
               onClick={() => setShowPreview(!showPreview)}
               className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
@@ -315,12 +369,6 @@ export default function ProjectStudio() {
               {saving ? "Saving..." : "Save"}
             </button>
             <Link
-              to={`/studio/${project.id}/settings`}
-              className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors"
-            >
-              Settings
-            </Link>
-            <Link
               to="/studio"
               className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors"
             >
@@ -337,7 +385,7 @@ export default function ProjectStudio() {
           className={`${showPreview ? "w-2/3" : "w-full"} h-full transition-all duration-300`}
         >
           <Flow
-            initialGraph={project.graph}
+            initialGraph={{ nodes: [], variables: [], customEvents: [] }}
             registry={registry}
             examples={examples}
             onGraphChange={handleGraphChange}
