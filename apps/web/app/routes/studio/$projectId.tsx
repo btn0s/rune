@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import { Flow } from "~/components/flow/Flow";
+import { Flow, type FlowRef } from "~/components/flow/Flow";
 import { ComponentPreview } from "~/components/flow/ComponentPreview";
 import { getProjectStorage } from "~/lib/storage/project-storage";
 import type { RuneProject } from "~/lib/types/project";
@@ -14,6 +14,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "~/components/ui/resizable";
+import { Button } from "~/components/ui/button";
 
 export function meta() {
   return [
@@ -45,6 +46,10 @@ export default function ProjectStudio() {
   const isUpdatingGraph = useRef(false);
   // Ref to the preview iframe for message passing
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
+  // Ref to the Flow component for accessing togglePlay
+  const flowRef = useRef<FlowRef>(null);
+  // State to track playing status for UI updates
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -369,7 +374,7 @@ export default function ProjectStudio() {
   return (
     <div className="h-screen w-screen relative bg-background">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Link to="/studio" className="flex items-center gap-2">
@@ -390,99 +395,54 @@ export default function ProjectStudio() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                showPreview
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border hover:bg-accent"
+            {/* Run Button */}
+            <Button
+              size="sm"
+              onClick={() => {
+                // Call the Flow component's togglePlay function
+                flowRef.current?.togglePlay();
+                // Update local playing state
+                const newPlayingState = !playing;
+                setPlaying(newPlayingState);
+
+                // Automatically open preview when starting to run
+                if (newPlayingState && !showPreview) {
+                  setShowPreview(true);
+                }
+
+                // Close preview when pausing
+                if (!newPlayingState && showPreview) {
+                  setShowPreview(false);
+                }
+              }}
+              className={`text-xs text-foreground ${
+                playing
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
               }`}
             >
-              {showPreview ? "Hide Live Preview" : "Show Live Preview"}
-            </button>
-
-            {/* Dev Server Status and Controls */}
-            <div className="flex items-center gap-2">
-              {devServerStatus === "running" && (
-                <a
-                  href={`http://localhost:${projectPort}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  View Live
-                </a>
-              )}
-
-              <div className="flex items-center gap-1">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    devServerStatus === "running"
-                      ? "bg-green-500"
-                      : devServerStatus === "starting"
-                        ? "bg-yellow-500 animate-pulse"
-                        : devServerStatus === "error"
-                          ? "bg-red-500"
-                          : "bg-gray-400"
-                  }`}
-                ></div>
-                <span className="text-xs text-muted-foreground">
-                  {devServerStatus === "running"
-                    ? "Live"
-                    : devServerStatus === "starting"
-                      ? "Starting..."
-                      : devServerStatus === "error"
-                        ? "Error"
-                        : "Stopped"}
-                </span>
-              </div>
-
-              {devServerStatus !== "running" &&
-                devServerStatus !== "starting" && (
-                  <button
-                    onClick={() => startDevServer(project?.id || "")}
-                    disabled={devServerStarting || !project}
-                    className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
-                  >
-                    Start Server
-                  </button>
-                )}
-
-              {devServerStatus === "running" && (
-                <button
-                  onClick={() => stopDevServer(project?.id || "")}
-                  disabled={!project}
-                  className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
-                >
-                  Stop Server
-                </button>
-              )}
-            </div>
-
-            <button
+              {playing ? "Pause" : "Run"}
+            </Button>
+            <Button
+              size={"sm"}
               onClick={handleSaveProject}
               disabled={saving}
-              className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="text-xs"
             >
               {saving ? "Saving..." : "Save"}
-            </button>
-            <Link
-              to="/studio"
-              className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors"
-            >
-              Close
-            </Link>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="w-full h-full pt-16 flex">
+      <div className="w-full h-full flex">
         {showPreview ? (
           <ResizablePanelGroup direction="horizontal" className="w-full h-full">
             {/* Flow Editor */}
             <ResizablePanel defaultSize={70} minSize={30}>
               <Flow
+                ref={flowRef}
                 initialGraph={project.graph}
                 registry={registry}
                 examples={examples}
@@ -640,6 +600,7 @@ export default function ProjectStudio() {
           /* Flow Editor - Full Width when preview is hidden */
           <div className="w-full h-full">
             <Flow
+              ref={flowRef}
               initialGraph={project.graph}
               registry={registry}
               examples={examples}

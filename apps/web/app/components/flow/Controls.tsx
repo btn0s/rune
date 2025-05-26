@@ -1,8 +1,6 @@
 import type { GraphJSON, NodeSpecJSON } from "@rune/behave-graph-core";
 import {
   faDownload,
-  faPause,
-  faPlay,
   faQuestion,
   faTrash,
   faUpload,
@@ -18,22 +16,16 @@ import { LoadModal, type Examples } from "./modals/LoadModal";
 import { SaveModal } from "./modals/SaveModal";
 
 export type CustomControlsProps = {
-  playing: boolean;
-  togglePlay: () => void;
   setBehaviorGraph: (value: GraphJSON) => void;
   examples: Examples;
   specJson: NodeSpecJSON[] | undefined;
 };
 
 export const CustomControls: React.FC<CustomControlsProps> = ({
-  playing,
-  togglePlay,
   setBehaviorGraph,
   examples,
   specJson,
 }: {
-  playing: boolean;
-  togglePlay: () => void;
   setBehaviorGraph: (value: GraphJSON) => void;
   examples: Examples;
   specJson: NodeSpecJSON[] | undefined;
@@ -45,21 +37,18 @@ export const CustomControls: React.FC<CustomControlsProps> = ({
 
   return (
     <>
-      <Controls position={"top-right"}>
-        <ControlButton title="Help" onClick={() => setHelpModalOpen(true)}>
+      <Controls position={"bottom-left"}>
+        {/* <ControlButton title="Help" onClick={() => setHelpModalOpen(true)}>
           <FontAwesomeIcon icon={faQuestion} />
-        </ControlButton>
-        <ControlButton title="Load" onClick={() => setLoadModalOpen(true)}>
+        </ControlButton> */}
+        {/* <ControlButton title="Load" onClick={() => setLoadModalOpen(true)}>
           <FontAwesomeIcon icon={faUpload} />
         </ControlButton>
         <ControlButton title="Save" onClick={() => setSaveModalOpen(true)}>
           <FontAwesomeIcon icon={faDownload} />
-        </ControlButton>
+        </ControlButton> */}
         <ControlButton title="Clear" onClick={() => setClearModalOpen(true)}>
           <FontAwesomeIcon icon={faTrash} />
-        </ControlButton>
-        <ControlButton title="Run" onClick={togglePlay}>
-          <FontAwesomeIcon icon={playing ? faPause : faPlay} />
         </ControlButton>
       </Controls>
       <LoadModal

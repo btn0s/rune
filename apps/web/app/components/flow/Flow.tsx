@@ -1,5 +1,10 @@
 import type { GraphJSON, IRegistry } from "@rune/behave-graph-core";
-import React, { useEffect, useRef } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import { Background, BackgroundVariant, ReactFlow } from "@xyflow/react";
 
 import { useBehaveGraphFlow } from "~/hooks/useBehaveGraphFlow";
@@ -18,113 +23,123 @@ type FlowProps = {
   onGraphChange?: (graph: GraphJSON) => void;
 };
 
-export const Flow: React.FC<FlowProps> = ({
-  initialGraph: graph,
-  registry,
-  examples,
-  onGraphChange,
-}) => {
-  const specJson = useNodeSpecJson(registry);
-  const isInitialLoad = useRef(true);
-  const lastGraphRef = useRef<GraphJSON | null>(null);
+export interface FlowRef {
+  togglePlay: () => void;
+  playing: boolean;
+}
 
-  const {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    graphJson,
-    setGraphJson,
-    nodeTypes,
-  } = useBehaveGraphFlow({
-    initialGraphJson: graph,
-    specJson,
-  });
+export const Flow = forwardRef<FlowRef, FlowProps>(
+  ({ initialGraph: graph, registry, examples, onGraphChange }, ref) => {
+    const specJson = useNodeSpecJson(registry);
+    const isInitialLoad = useRef(true);
+    const lastGraphRef = useRef<GraphJSON | null>(null);
 
-  const {
-    onConnect,
-    handleStartConnect,
-    handleStopConnect,
-    handlePaneClick,
-    handlePaneContextMenu,
-    nodePickerVisibility,
-    handleAddNode,
-    lastConnectStart,
-    closeNodePicker,
-    nodePickFilters,
-  } = useFlowHandlers({
-    nodes,
-    onEdgesChange,
-    onNodesChange,
-    specJSON: specJson,
-  });
+    const {
+      nodes,
+      edges,
+      onNodesChange,
+      onEdgesChange,
+      graphJson,
+      setGraphJson,
+      nodeTypes,
+    } = useBehaveGraphFlow({
+      initialGraphJson: graph,
+      specJson,
+    });
 
-  const { togglePlay, playing } = useGraphRunner({
-    graphJson,
-    registry,
-  });
+    const {
+      onConnect,
+      handleStartConnect,
+      handleStopConnect,
+      handlePaneClick,
+      handlePaneContextMenu,
+      nodePickerVisibility,
+      handleAddNode,
+      lastConnectStart,
+      closeNodePicker,
+      nodePickFilters,
+    } = useFlowHandlers({
+      nodes,
+      onEdgesChange,
+      onNodesChange,
+      specJSON: specJson,
+    });
 
-  // Notify parent component when graph changes (but not on initial load)
-  useEffect(() => {
-    if (!onGraphChange || !graphJson) return;
+    const { togglePlay, playing } = useGraphRunner({
+      graphJson,
+      registry,
+    });
 
-    // Skip the initial load
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      lastGraphRef.current = graphJson;
-      return;
-    }
+    // Expose togglePlay function to parent component
+    useImperativeHandle(
+      ref,
+      () => ({
+        togglePlay,
+        playing,
+      }),
+      [togglePlay, playing]
+    );
 
-    // Only call onGraphChange if the graph actually changed
-    if (JSON.stringify(graphJson) !== JSON.stringify(lastGraphRef.current)) {
-      lastGraphRef.current = graphJson;
-      onGraphChange(graphJson);
-    }
-  }, [graphJson, onGraphChange]);
+    // Notify parent component when graph changes (but not on initial load)
+    useEffect(() => {
+      if (!onGraphChange || !graphJson) return;
 
-  // Reset initial load flag when initialGraph prop changes
-  useEffect(() => {
-    isInitialLoad.current = true;
-  }, [graph]);
+      // Skip the initial load
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        lastGraphRef.current = graphJson;
+        return;
+      }
 
-  // Define edge types
-  const edgeTypes = {
-    default: ColoredEdge,
-  };
+      // Only call onGraphChange if the graph actually changed
+      if (JSON.stringify(graphJson) !== JSON.stringify(lastGraphRef.current)) {
+        lastGraphRef.current = graphJson;
+        onGraphChange(graphJson);
+      }
+    }, [graphJson, onGraphChange]);
 
-  return (
-    <ReactFlow
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onConnectStart={handleStartConnect}
-      onConnectEnd={handleStopConnect}
-      fitViewOptions={{ maxZoom: 1 }}
-      onPaneClick={handlePaneClick}
-      onPaneContextMenu={handlePaneContextMenu}
-      colorMode="dark"
-    >
-      <CustomControls
-        playing={playing}
-        togglePlay={togglePlay}
-        setBehaviorGraph={setGraphJson}
-        examples={examples}
-        specJson={specJson}
-      />
+    // Reset initial load flag when initialGraph prop changes
+    useEffect(() => {
+      isInitialLoad.current = true;
+    }, [graph]);
 
-      {nodePickerVisibility && (
-        <NodePicker
-          position={nodePickerVisibility}
-          filters={nodePickFilters}
-          onPickNode={handleAddNode}
-          onClose={closeNodePicker}
-          specJSON={specJson}
+    // Define edge types
+    const edgeTypes = {
+      default: ColoredEdge,
+    };
+
+    return (
+      <ReactFlow
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onConnectStart={handleStartConnect}
+        onConnectEnd={handleStopConnect}
+        fitViewOptions={{ maxZoom: 1 }}
+        onPaneClick={handlePaneClick}
+        onPaneContextMenu={handlePaneContextMenu}
+        colorMode="dark"
+      >
+        <CustomControls
+          setBehaviorGraph={setGraphJson}
+          examples={examples}
+          specJson={specJson}
         />
-      )}
-    </ReactFlow>
-  );
-};
+
+        {nodePickerVisibility && (
+          <NodePicker
+            position={nodePickerVisibility}
+            filters={nodePickFilters}
+            onPickNode={handleAddNode}
+            onClose={closeNodePicker}
+            specJSON={specJson}
+          />
+        )}
+      </ReactFlow>
+    );
+  }
+);
