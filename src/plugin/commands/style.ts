@@ -1,8 +1,8 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
-function getSceneNode(nodeId: string): SceneNode {
+async function getSceneNode(nodeId: string): Promise<SceneNode> {
   if (!nodeId) throw new Error("nodeId is required");
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type === "DOCUMENT" || node.type === "PAGE") {
     throw new Error(`Cannot style a ${node.type} node`);
@@ -22,7 +22,7 @@ function makeSolidPaint(color: { r: number; g: number; b: number; a?: number }):
 
 commandRegistry.set("set_style", async (params) => {
   const { nodeId, fillColor, strokeColor, strokeWeight, strokeAlign, cornerRadius, opacity, visible } = params;
-  const node = getSceneNode(nodeId);
+  const node = await getSceneNode(nodeId);
 
   // Fill
   if (fillColor !== undefined && "fills" in node) {
@@ -82,7 +82,7 @@ commandRegistry.set("set_style", async (params) => {
 
 commandRegistry.set("add_effect", async (params) => {
   const { nodeId, type, color, offsetX, offsetY, blurRadius, spread } = params;
-  const node = getSceneNode(nodeId);
+  const node = await getSceneNode(nodeId);
 
   if (!("effects" in node)) {
     throw new Error(`Node ${nodeId} does not support effects`);
@@ -117,7 +117,7 @@ commandRegistry.set("add_effect", async (params) => {
 
 commandRegistry.set("remove_effects", async (params) => {
   const { nodeId } = params;
-  const node = getSceneNode(nodeId);
+  const node = await getSceneNode(nodeId);
 
   if (!("effects" in node)) {
     throw new Error(`Node ${nodeId} does not support effects`);
@@ -134,7 +134,7 @@ commandRegistry.set("remove_effects", async (params) => {
 
 commandRegistry.set("get_node_style", async (params) => {
   const { nodeId } = params;
-  const node = getSceneNode(nodeId);
+  const node = await getSceneNode(nodeId);
 
   const result: Record<string, any> = {
     id: node.id,
@@ -200,7 +200,7 @@ commandRegistry.set("get_node_style", async (params) => {
 commandRegistry.set("set_locked", async (params) => {
   const { nodeId, locked } = params;
   if (locked === undefined) throw new Error("locked is required");
-  const node = getSceneNode(nodeId);
+  const node = await getSceneNode(nodeId);
   node.locked = locked;
   return { id: node.id, name: node.name, locked: node.locked };
 });

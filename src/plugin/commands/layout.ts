@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 // ─── Auto-Layout ──────────────────────────────────────────────────────────────
 
@@ -7,7 +7,7 @@ commandRegistry.set("set_auto_layout", async (params) => {
   if (!nodeId) throw new Error("nodeId is required");
   if (!direction) throw new Error("direction is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("layoutMode" in node)) {
@@ -71,7 +71,7 @@ commandRegistry.set("set_layout_sizing", async (params) => {
   const { nodeId, horizontal, vertical } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("layoutSizingHorizontal" in node)) {
@@ -101,7 +101,7 @@ commandRegistry.set("set_layout_align", async (params) => {
   const { nodeId, layoutAlign, layoutGrow } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("layoutAlign" in node)) {
@@ -132,7 +132,7 @@ commandRegistry.set("move_node", async (params) => {
   if (!nodeId) throw new Error("nodeId is required");
   if (x === undefined || y === undefined) throw new Error("x and y are required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("x" in node) || !("y" in node)) {
@@ -160,7 +160,7 @@ commandRegistry.set("resize_node", async (params) => {
     throw new Error("width and height are required");
   }
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("resize" in node)) {
@@ -185,7 +185,7 @@ commandRegistry.set("set_rotation", async (params) => {
   if (!nodeId) throw new Error("nodeId is required");
   if (rotation === undefined) throw new Error("rotation is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (!("rotation" in node)) {

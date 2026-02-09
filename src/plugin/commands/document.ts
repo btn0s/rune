@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 /**
  * Filter a Figma node to remove token-bloating properties.
@@ -126,7 +126,6 @@ commandRegistry.set("get_document_info", async () => {
     pages: doc.children.map((page) => ({
       id: page.id,
       name: page.name,
-      childCount: page.children.length,
     })),
   };
 });
@@ -161,7 +160,7 @@ commandRegistry.set("get_node_by_id", async (params) => {
   const { nodeId } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
 
   if (node.type === "DOCUMENT" || node.type === "PAGE") {
@@ -189,7 +188,7 @@ commandRegistry.set("get_node_children", async (params) => {
   const { nodeId, offset = 0, limit = 50 } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (!("children" in node)) throw new Error(`Node ${nodeId} has no children`);
 
@@ -255,7 +254,7 @@ commandRegistry.set("set_selection", async (params) => {
 
   const nodes: SceneNode[] = [];
   for (const id of nodeIds) {
-    const node = figma.getNodeById(id);
+    const node = await figma.getNodeByIdAsync(id);
     if (node && node.type !== "DOCUMENT" && node.type !== "PAGE") {
       nodes.push(node as SceneNode);
     }
@@ -300,7 +299,7 @@ commandRegistry.set("zoom_to_fit", async (params) => {
 
   if (nodeIds && Array.isArray(nodeIds) && nodeIds.length > 0) {
     for (const id of nodeIds) {
-      const node = figma.getNodeById(id);
+      const node = await figma.getNodeByIdAsync(id);
       if (node && node.type !== "DOCUMENT" && node.type !== "PAGE") {
         nodes.push(node as SceneNode);
       }

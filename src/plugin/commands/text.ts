@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 function fontWeightToStyle(weight: number): string {
   const map: Record<number, string> = {
@@ -15,9 +15,9 @@ function fontWeightToStyle(weight: number): string {
   return map[weight] ?? "Regular";
 }
 
-function getTextNode(nodeId: string): TextNode {
+async function getTextNode(nodeId: string): Promise<TextNode> {
   if (!nodeId) throw new Error("nodeId is required");
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type !== "TEXT") throw new Error(`Node ${nodeId} is not a TEXT node (got ${node.type})`);
   return node as TextNode;
@@ -56,7 +56,7 @@ commandRegistry.set("set_text_content", async (params) => {
   const { nodeId, text } = params;
   if (text === undefined || text === null) throw new Error("text is required");
 
-  const textNode = getTextNode(nodeId);
+  const textNode = await getTextNode(nodeId);
 
   // CRITICAL: Load current font before modifying text
   await loadCurrentFont(textNode);
@@ -85,7 +85,7 @@ commandRegistry.set("set_text_style", async (params) => {
     textDecoration,
   } = params;
 
-  const textNode = getTextNode(nodeId);
+  const textNode = await getTextNode(nodeId);
 
   // CRITICAL: font must be loaded before any text property changes
   const currentFont = await loadCurrentFont(textNode);
@@ -142,7 +142,7 @@ commandRegistry.set("set_text_style", async (params) => {
 
 commandRegistry.set("get_text_content", async (params) => {
   const { nodeId } = params;
-  const textNode = getTextNode(nodeId);
+  const textNode = await getTextNode(nodeId);
 
   const fontName = textNode.fontName;
   const fontSize = textNode.fontSize;

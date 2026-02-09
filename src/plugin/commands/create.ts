@@ -1,8 +1,8 @@
 import { commandRegistry } from './index';
 
-function getParent(parentId?: string): BaseNode & ChildrenMixin {
+async function getParent(parentId?: string): Promise<BaseNode & ChildrenMixin> {
   if (parentId) {
-    const node = figma.getNodeById(parentId);
+    const node = await figma.getNodeByIdAsync(parentId);
     if (!node) throw new Error(`Parent node not found: ${parentId}`);
     if (!('appendChild' in node)) throw new Error(`Node ${parentId} cannot have children`);
     return node as BaseNode & ChildrenMixin;
@@ -48,7 +48,7 @@ commandRegistry.set('create_rectangle', async (params) => {
   rect.name = name ?? 'Rectangle';
   if (cornerRadius !== undefined) rect.cornerRadius = cornerRadius;
   applyFill(rect, fillColor);
-  getParent(parentId).appendChild(rect);
+  (await getParent(parentId)).appendChild(rect);
   return creationResult(rect);
 });
 
@@ -60,7 +60,7 @@ commandRegistry.set('create_ellipse', async (params) => {
   ellipse.resize(width, height);
   ellipse.name = name ?? 'Ellipse';
   applyFill(ellipse, fillColor);
-  getParent(parentId).appendChild(ellipse);
+  (await getParent(parentId)).appendChild(ellipse);
   return creationResult(ellipse);
 });
 
@@ -77,7 +77,7 @@ commandRegistry.set('create_line', async (params) => {
   line.rotation = -Math.atan2(dy, dx) * (180 / Math.PI);
   line.name = name ?? 'Line';
   applyStroke(line, strokeColor ?? { r: 0, g: 0, b: 0 }, strokeWeight ?? 1);
-  getParent(parentId).appendChild(line);
+  (await getParent(parentId)).appendChild(line);
   return creationResult(line);
 });
 
@@ -111,7 +111,7 @@ commandRegistry.set('create_frame', async (params) => {
     if (layoutSizingVertical) frame.layoutSizingVertical = layoutSizingVertical;
   }
 
-  getParent(parentId).appendChild(frame);
+  (await getParent(parentId)).appendChild(frame);
   return creationResult(frame);
 });
 
@@ -119,11 +119,12 @@ commandRegistry.set('create_group', async (params) => {
   const { nodeIds, name } = params;
   if (!nodeIds || nodeIds.length === 0) throw new Error('nodeIds must be a non-empty array');
 
-  const nodes: SceneNode[] = nodeIds.map((id: string) => {
-    const node = figma.getNodeById(id);
+  const nodes: SceneNode[] = [];
+  for (const id of nodeIds) {
+    const node = await figma.getNodeByIdAsync(id);
     if (!node) throw new Error(`Node not found: ${id}`);
-    return node as SceneNode;
-  });
+    nodes.push(node as SceneNode);
+  }
 
   const parent = nodes[0].parent;
   if (!parent) throw new Error('Cannot group nodes without a parent');
@@ -141,7 +142,7 @@ commandRegistry.set('create_component', async (params) => {
   component.resize(width, height);
   component.name = name ?? 'Component';
   applyFill(component, fillColor);
-  getParent(parentId).appendChild(component);
+  (await getParent(parentId)).appendChild(component);
   return creationResult(component);
 });
 
@@ -152,7 +153,7 @@ commandRegistry.set('create_instance', async (params) => {
   instance.x = x;
   instance.y = y;
   if (name) instance.name = name;
-  getParent(parentId).appendChild(instance);
+  (await getParent(parentId)).appendChild(instance);
   return creationResult(instance);
 });
 
@@ -189,7 +190,7 @@ commandRegistry.set('create_text', async (params) => {
     textNode.textAlignHorizontal = textAlignHorizontal;
   }
 
-  getParent(parentId).appendChild(textNode);
+  (await getParent(parentId)).appendChild(textNode);
   return creationResult(textNode);
 });
 

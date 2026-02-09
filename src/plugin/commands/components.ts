@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 // ─── Get Local Components ─────────────────────────────────────────────────────
 

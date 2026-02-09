@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 // ─── Delete Node ──────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ commandRegistry.set("delete_node", async (params) => {
   const errors: Array<{ id: string; error: string }> = [];
 
   for (const id of idsToDelete) {
-    const node = figma.getNodeById(id);
+    const node = await figma.getNodeByIdAsync(id);
     if (!node) {
       errors.push({ id, error: `Node not found: ${id}` });
       continue;
@@ -48,7 +48,7 @@ commandRegistry.set("clone_node", async (params) => {
   const { nodeId, x, y } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type === "DOCUMENT" || node.type === "PAGE") {
     throw new Error(`Cannot clone ${node.type} node`);
@@ -75,7 +75,7 @@ commandRegistry.set("rename_node", async (params) => {
   if (!nodeId) throw new Error("nodeId is required");
   if (!name) throw new Error("name is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type === "DOCUMENT") {
     throw new Error("Cannot rename DOCUMENT node");
@@ -99,13 +99,13 @@ commandRegistry.set("reparent_node", async (params) => {
   if (!nodeId) throw new Error("nodeId is required");
   if (!newParentId) throw new Error("newParentId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type === "DOCUMENT" || node.type === "PAGE") {
     throw new Error(`Cannot reparent ${node.type} node`);
   }
 
-  const newParent = figma.getNodeById(newParentId);
+  const newParent = await figma.getNodeByIdAsync(newParentId);
   if (!newParent) throw new Error(`Parent node not found: ${newParentId}`);
   if (!("children" in newParent)) {
     throw new Error(`Target parent (${newParent.type}) cannot have children`);

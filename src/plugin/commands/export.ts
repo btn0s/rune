@@ -1,4 +1,4 @@
-import { commandRegistry } from "./index";
+import { commandRegistry } from "./registry";
 
 // ─── Export Node as Image ─────────────────────────────────────────────────────
 
@@ -6,7 +6,7 @@ commandRegistry.set("export_node_as_image", async (params) => {
   const { nodeId, format = "PNG", scale = 1 } = params;
   if (!nodeId) throw new Error("nodeId is required");
 
-  const node = figma.getNodeById(nodeId);
+  const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) throw new Error(`Node not found: ${nodeId}`);
   if (node.type === "DOCUMENT" || node.type === "PAGE") {
     throw new Error(`Cannot export ${node.type} node as image`);

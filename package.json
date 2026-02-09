@@ -5,7 +5,7 @@
   "main": "dist/code.js",
   "type": "module",
   "scripts": {
-    "build:plugin": "bun build src/plugin/code.ts --outfile dist/code.js --target browser && cp src/plugin/ui.html dist/ui.html",
+    "build:plugin": "bunx esbuild src/plugin/code.ts --bundle --outfile=dist/code.js --target=es2015 --format=iife --platform=browser && cp src/plugin/ui.html dist/ui.html",
     "build:server": "bun build src/server/index.ts --outfile dist/server.js --target node",
     "server": "bun src/server/index.ts",
     "dev": "bun --watch src/plugin/code.ts",

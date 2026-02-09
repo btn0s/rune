@@ -1,6 +1,5 @@
-export type CommandHandler = (params: Record<string, any>) => Promise<any>;
-
-export const commandRegistry = new Map<string, CommandHandler>();
+export { commandRegistry } from "./registry";
+export type { CommandHandler } from "./registry";
 
 import "./document";
 import "./create";
