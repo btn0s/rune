@@ -63,12 +63,12 @@ Create a production-quality MCP server that gives AI clients full read/write acc
 - `README.md` — Setup and usage instructions (MCP client config examples)
 
 ### Definition of Done
-- [ ] `bun run server` starts MCP server + WS bridge on localhost
-- [ ] Plugin connects to WS bridge when opened in Figma
-- [ ] All ~42 tools are registered and callable through any MCP client
-- [ ] AI client can create frames, text, shapes, set styles, manage auto-layout, and navigate the document
-- [ ] Connection survives plugin UI reloads with auto-reconnect
-- [ ] Plugin gracefully handles file switch (termination + reconnect)
+- [x] `bun run server` starts MCP server + WS bridge on localhost
+- [x] Plugin connects to WS bridge when opened in Figma
+- [x] All ~42 tools are registered and callable through any MCP client
+- [x] AI client can create frames, text, shapes, set styles, manage auto-layout, and navigate the document
+- [x] Connection survives plugin UI reloads with auto-reconnect
+- [x] Plugin gracefully handles file switch (termination + reconnect)
 
 ### Must Have
 - All tool categories: Document/Navigation, Selection, Node Creation, Styling, Layout, Text, Components, Export, Viewport, Node Manipulation
@@ -171,7 +171,7 @@ Wave 4 (After Wave 3):
 
 ## TODOs
 
-- [ ] 1. Project Setup & Build System
+- [x] 1. Project Setup & Build System
 
   **What to do**:
   - Initialize Bun project: `bun init`, set up package.json with scripts
@@ -271,7 +271,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 2. MCP Server + WebSocket Bridge Infrastructure
+- [x] 2. MCP Server + WebSocket Bridge Infrastructure
 
   **What to do**:
   - Create `src/server/index.ts` — entry point that starts both MCP server and WebSocket bridge
@@ -386,7 +386,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 3. Figma Plugin Bridge (UI Thread + Main Thread)
+- [x] 3. Figma Plugin Bridge (UI Thread + Main Thread)
 
   **What to do**:
   - Create `src/plugin/ui.html` — Plugin UI thread:
@@ -499,7 +499,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 4. Document & Navigation Tools
+- [x] 4. Document & Navigation Tools
 
   **What to do**:
   - Create `src/server/tools/document.ts` — register document/navigation tools with MCP server
@@ -598,7 +598,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 5. Node Creation Tools
+- [x] 5. Node Creation Tools
 
   **What to do**:
   - Create `src/server/tools/create.ts` — register creation tools with MCP server
@@ -694,7 +694,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 6. Styling Tools
+- [x] 6. Styling Tools
 
   **What to do**:
   - Create `src/server/tools/style.ts` — register styling tools with MCP server
@@ -796,7 +796,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 7. Layout & Auto-Layout Tools
+- [x] 7. Layout & Auto-Layout Tools
 
   **What to do**:
   - Create `src/server/tools/layout.ts` — register layout tools with MCP server
@@ -871,7 +871,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 8. Text Tools
+- [x] 8. Text Tools
 
   **What to do**:
   - Create `src/server/tools/text.ts` — register text tools with MCP server
@@ -967,7 +967,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 9. Node Manipulation, Export, & Component Tools
+- [x] 9. Node Manipulation, Export, & Component Tools
 
   **What to do**:
   - Create `src/server/tools/manipulate.ts` — node manipulation tools
@@ -1066,7 +1066,7 @@ Wave 4 (After Wave 3):
 
 ---
 
-- [ ] 10. Integration, Polish & Documentation
+- [x] 10. Integration, Polish & Documentation
 
   **What to do**:
   - Wire all tool modules together in `src/server/index.ts`:
@@ -1192,12 +1192,12 @@ bun run server        # Expected: "MCP server started", "WebSocket bridge listen
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" categories present (Document, Selection, Creation, Styling, Layout, Text, Components, Export, Viewport, Manipulation)
-- [ ] All "Must NOT Have" absent (no AI/LLM, no chat UI, no FigJam, no auth, no TLS)
-- [ ] Plugin stays open indefinitely (never calls closePlugin)
-- [ ] Auto-reconnect works after server restart
-- [ ] Font loading before all text operations
-- [ ] Large node trees are paginated/chunked
-- [ ] Errors return meaningful messages to AI client
-- [ ] README has MCP client config for Claude, Cursor, and OpenCode
-- [ ] Smoke test: UI card created successfully via MCP tools
+- [x] All "Must Have" categories present (Document, Selection, Creation, Styling, Layout, Text, Components, Export, Viewport, Manipulation)
+- [x] All "Must NOT Have" absent (no AI/LLM, no chat UI, no FigJam, no auth, no TLS)
+- [x] Plugin stays open indefinitely (never calls closePlugin)
+- [x] Auto-reconnect works after server restart
+- [x] Font loading before all text operations
+- [x] Large node trees are paginated/chunked
+- [x] Errors return meaningful messages to AI client
+- [x] README has MCP client config for Claude, Cursor, and OpenCode
+- [x] Smoke test: UI card created successfully via MCP tools
