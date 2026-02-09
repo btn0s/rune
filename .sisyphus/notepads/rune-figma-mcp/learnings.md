@@ -78,3 +78,33 @@
 - ui.html uses plain JS (not TypeScript) since it's copied directly, not compiled
 - `figma.on('close')` fires when user switches files or closes plugin — must handle gracefully
 - WebSocket `new WebSocket()` can throw in some environments — wrapped in try/catch
+
+## Task 2: MCP Server + WebSocket Bridge Infrastructure
+
+### Architecture
+- **Entry point** (`src/server/index.ts`): Starts WS bridge first, then MCP server. Bridge is sync (Bun.serve), MCP is async (stdio transport connect).
+- **MCP server** (`src/server/mcp.ts`): Uses `McpServer` from SDK with `StdioServerTransport`. Exports `registerTool` helper that wraps handler with standard error handling (try/catch → `isError: true` content).
+- **WebSocket bridge** (`src/server/bridge.ts`): `Bun.serve()` native WebSocket. Single plugin connection tracked. `sendCommand()` uses UUID correlation with `pendingRequests` Map.
+- **Logger** (`src/server/logger.ts`): All output via `process.stderr.write()` — stdout is exclusively for MCP JSON-RPC.
+
+### Key Patterns
+1. **UUID correlation**: `sendCommand()` generates `crypto.randomUUID()`, stores `{resolve, reject, timeout}` in `pendingRequests` Map. Plugin response matched by `id` field.
+2. **Timeout handling**: Each pending request has its own `setTimeout`. Default 30s, configurable per-call (e.g. 60s for exports).
+3. **Plugin disconnect**: `rejectAllPending()` clears all timeouts and rejects with error. Called on WS close AND on reconnect.
+4. **Plugin reconnect**: Accepts new connection, rejects old pending requests, updates socket reference.
+5. **registerTool helper**: Wraps raw handler `(args) => Promise<any>` into MCP `CallToolResult` format with automatic `isError` flag on exceptions.
+
+### SDK Behaviors
+- **MCP SDK `tools/list`**: Handler is only installed when at least one tool is registered via `registerTool()`. With zero tools, `tools/list` returns "Method not found" (-32601). This is expected — will resolve when Tasks 4-9 register tools.
+- **MCP SDK uses `registerTool` (new API)**: The older `.tool()` method is deprecated. New signature: `registerTool(name, { title, description, inputSchema, outputSchema, annotations }, callback)`.
+- **`@types/bun`**: Must be installed as devDependency for Bun.serve(), ServerWebSocket types. Added in this task.
+
+### Verification Results
+✅ `bun run server` starts, logs to stderr, not stdout
+✅ MCP initialize returns `{"protocolVersion":"2025-03-26","serverInfo":{"name":"rune","version":"1.0.0"}}`
+✅ WebSocket accepts connections on ws://localhost:3055
+✅ `sendCommand()` resolves on plugin response
+✅ `sendCommand()` rejects with timeout after configured ms
+✅ Plugin disconnect rejects all pending requests
+✅ `bunx tsc --noEmit` compiles cleanly
+✅ LSP diagnostics clean on all 4 server files
