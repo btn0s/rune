@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      margin: 0;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 12px 0;
+    }
+    p {
+      margin: 8px 0;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rune MCP Server</h1>
+  <p>Connected to Figma plugin</p>
+  <script>
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg && msg.type === 'connected') {
+        console.log('Plugin connected:', msg.message);
+      }
+    };
+  </script>
+</body>
+</html>

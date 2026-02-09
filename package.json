@@ -1,0 +1,51 @@
+{
+  "name": "rune",
+  "version": "1.0.0",
+  "description": "Rune MCP Server - Figma Plugin",
+  "main": "dist/code.js",
+  "type": "module",
+  "scripts": {
+    "build:plugin": "bun build src/plugin/code.ts --outfile dist/code.js --target browser && cp src/plugin/ui.html dist/ui.html",
+    "build:server": "bun build src/server/index.ts --outfile dist/server.js --target node",
+    "server": "bun src/server/index.ts",
+    "dev": "bun --watch src/plugin/code.ts",
+    "lint": "eslint --ext .ts,.tsx --ignore-pattern node_modules .",
+    "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --fix ."
+  },
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@figma/eslint-plugin-figma-plugins": "*",
+    "@figma/plugin-typings": "*",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.2"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@figma/figma-plugins/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "root": true,
+    "rules": {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ]
+    }
+  }
+}
