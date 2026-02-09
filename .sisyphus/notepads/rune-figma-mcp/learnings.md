@@ -52,3 +52,29 @@
 - Create MCP server implementation in `src/server/index.ts`
 - Implement WebSocket bridge for plugin ↔ server communication
 - Add tool handlers for Figma operations (Tasks 4-9)
+
+## Task 3: Figma Plugin Bridge (UI Thread + Main Thread)
+
+### Architecture
+- **UI thread** (ui.html): Runs in iframe sandbox, has network access (WebSocket), no Figma API
+- **Main thread** (code.ts): Has Figma API access, no network. Communicates with UI via postMessage
+- **Command registry** (commands/index.ts): Map<string, CommandHandler> — empty for now, populated by Tasks 4-9
+
+### Key Patterns
+1. **Message flow**: Server → WS → UI thread → postMessage → Main thread → commandRegistry → postMessage → UI thread → WS → Server
+2. **Auto-reconnect**: Exponential backoff starting at 1s, doubling each attempt, max 30s. Resets on successful connection.
+3. **clientStorage bridge**: UI sends `{ type: 'client_storage_set/get', storage_key, ... }` to main thread which proxies `figma.clientStorage` calls
+4. **Command dispatch**: Map-based lookup. Unknown commands return `{ id, error: "Unknown command: <type>" }`. All execution wrapped in try/catch.
+5. **Plugin persistence**: NEVER call `figma.closePlugin()`. Plugin stays running as persistent bridge.
+6. **Cleanup**: `figma.on('close')` sends `plugin_closing` to UI, which sends `plugin_disconnected` to server and closes WS.
+
+### Build Output
+- `dist/code.js`: 1.19 KB — contains bundled main thread code
+- `dist/ui.html`: 3.7 KB — copied as-is (not bundled, contains inline JS/CSS)
+- Build command: `bun build src/plugin/code.ts --outfile dist/code.js --target browser && cp src/plugin/ui.html dist/ui.html`
+
+### Gotchas
+- Bun's `--target browser` bundles imports but doesn't resolve `@shared/*` path aliases for the plugin (not needed since commands/index.ts uses relative imports)
+- ui.html uses plain JS (not TypeScript) since it's copied directly, not compiled
+- `figma.on('close')` fires when user switches files or closes plugin — must handle gracefully
+- WebSocket `new WebSocket()` can throw in some environments — wrapped in try/catch
