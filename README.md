@@ -39,9 +39,6 @@ bun run build:plugin
 # 4. Run the plugin in Figma
 #    Right-click canvas → Plugins → Development → Rune
 #    Wait for the green "Connected" indicator
-
-# 5. Start the MCP server (done automatically by MCP client config below)
-bun run server
 ```
 
 ## MCP Client Configuration

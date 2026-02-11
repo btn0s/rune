@@ -10,6 +10,15 @@ async function getSceneNode(nodeId: string): Promise<SceneNode> {
   return node as SceneNode;
 }
 
+function base64ToUint8Array(base64: string): Uint8Array {
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    arr[i] = raw.charCodeAt(i);
+  }
+  return arr;
+}
+
 function makeSolidPaint(color: { r: number; g: number; b: number; a?: number }): SolidPaint {
   return {
     type: "SOLID",
@@ -21,7 +30,7 @@ function makeSolidPaint(color: { r: number; g: number; b: number; a?: number }):
 // ─── set_style ───────────────────────────────────────────────────────────────
 
 commandRegistry.set("set_style", async (params) => {
-  const { nodeId, fillColor, strokeColor, strokeWeight, strokeAlign, cornerRadius, opacity, visible } = params;
+  const { nodeId, fillColor, strokeColor, strokeWeight, strokeAlign, cornerRadius, opacity, visible, gradientFill } = params;
   const node = await getSceneNode(nodeId);
 
   // Fill
@@ -32,6 +41,25 @@ commandRegistry.set("set_style", async (params) => {
     } else {
       geom.fills = [makeSolidPaint(fillColor)];
     }
+  }
+
+  // Gradient fill
+  if (gradientFill !== undefined && "fills" in node) {
+    const geom = node as GeometryMixin;
+    const stops: readonly ColorStop[] = gradientFill.stops.map((s: { position: number; color: { r: number; g: number; b: number; a?: number } }) => ({
+      position: s.position,
+      color: { r: s.color.r, g: s.color.g, b: s.color.b, a: s.color.a ?? 1 },
+    }));
+    const defaultTransform: Transform = [[1, 0, 0], [0, 1, 0]];
+    const transform: Transform = gradientFill.transform
+      ? [gradientFill.transform[0] as [number, number, number], gradientFill.transform[1] as [number, number, number]]
+      : defaultTransform;
+    const gradient: GradientPaint = {
+      type: gradientFill.type,
+      gradientStops: stops,
+      gradientTransform: transform,
+    };
+    geom.fills = [gradient];
   }
 
   // Stroke
@@ -90,9 +118,9 @@ commandRegistry.set("add_effect", async (params) => {
 
   const blendNode = node as BlendMixin;
 
-  if (type === "DROP_SHADOW") {
-    const shadow: DropShadowEffect = {
-      type: "DROP_SHADOW",
+  if (type === "DROP_SHADOW" || type === "INNER_SHADOW") {
+    const shadow = {
+      type: type as "DROP_SHADOW" | "INNER_SHADOW",
       color: {
         r: color?.r ?? 0,
         g: color?.g ?? 0,
@@ -103,11 +131,19 @@ commandRegistry.set("add_effect", async (params) => {
       radius: blurRadius ?? 4,
       spread: spread ?? 0,
       visible: true,
-      blendMode: "NORMAL",
+      blendMode: "NORMAL" as const,
     };
     blendNode.effects = [...blendNode.effects, shadow];
+  } else if (type === "LAYER_BLUR" || type === "BACKGROUND_BLUR") {
+    const blur: BlurEffectNormal = {
+      type: type as "LAYER_BLUR" | "BACKGROUND_BLUR",
+      blurType: "NORMAL",
+      radius: blurRadius ?? 4,
+      visible: true,
+    };
+    blendNode.effects = [...blendNode.effects, blur];
   } else {
-    throw new Error(`Unsupported effect type: ${type}. Currently supported: DROP_SHADOW`);
+    throw new Error(`Unsupported effect type: ${type}`);
   }
 
   return { id: node.id, name: node.name, effectCount: blendNode.effects.length };
@@ -203,4 +239,30 @@ commandRegistry.set("set_locked", async (params) => {
   const node = await getSceneNode(nodeId);
   node.locked = locked;
   return { id: node.id, name: node.name, locked: node.locked };
+});
+
+// ─── set_image_fill ──────────────────────────────────────────────────────────
+
+commandRegistry.set("set_image_fill", async (params) => {
+  const { nodeId, base64, scaleMode = "FILL" } = params;
+  if (!nodeId) throw new Error("nodeId is required");
+  if (!base64) throw new Error("base64 image data is required");
+
+  const node = await getSceneNode(nodeId);
+  if (!("fills" in node)) {
+    throw new Error(`Node ${nodeId} does not support fills`);
+  }
+
+  const bytes = base64ToUint8Array(base64);
+  const image = figma.createImage(bytes);
+
+  const paint: ImagePaint = {
+    type: "IMAGE",
+    scaleMode: scaleMode,
+    imageHash: image.hash,
+  };
+
+  (node as GeometryMixin).fills = [paint];
+
+  return { id: node.id, name: node.name, imageHash: image.hash };
 });
