@@ -10,15 +10,6 @@ async function getSceneNode(nodeId: string): Promise<SceneNode> {
   return node as SceneNode;
 }
 
-function base64ToUint8Array(base64: string): Uint8Array {
-  const raw = atob(base64);
-  const arr = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) {
-    arr[i] = raw.charCodeAt(i);
-  }
-  return arr;
-}
-
 function makeSolidPaint(color: { r: number; g: number; b: number; a?: number }): SolidPaint {
   return {
     type: "SOLID",
@@ -253,7 +244,7 @@ commandRegistry.set("set_image_fill", async (params) => {
     throw new Error(`Node ${nodeId} does not support fills`);
   }
 
-  const bytes = base64ToUint8Array(base64);
+  const bytes = figma.base64Decode(base64);
   const image = figma.createImage(bytes);
 
   const paint: ImagePaint = {
