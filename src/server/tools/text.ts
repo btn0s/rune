@@ -62,6 +62,8 @@ registerTool("set_text_style", {
       .enum(["NONE", "UNDERLINE", "STRIKETHROUGH"])
       .optional()
       .describe("Text decoration"),
+    letterSpacing: z.number().optional().describe("Letter spacing as percentage (e.g. 10 = 10%)"),
+    lineHeight: z.union([z.number().positive(), z.literal("AUTO")]).optional().describe("Line height in pixels, or 'AUTO'"),
   },
 }, async (args) => {
   const params = { ...args } as Record<string, unknown>;

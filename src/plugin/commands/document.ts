@@ -54,19 +54,44 @@ function filterNodeProperties(node: SceneNode): Record<string, any> {
     result.cornerRadius = (node as any).cornerRadius;
   }
 
-  // Text content
   if (node.type === "TEXT") {
     result.characters = (node as TextNode).characters;
     result.fontSize = (node as TextNode).fontSize;
     result.fontName = (node as TextNode).fontName;
   }
 
-  // Layout properties
+  if (node.type === "VECTOR") {
+    const vectorNode = node as VectorNode;
+    if (vectorNode.vectorPaths && vectorNode.vectorPaths.length > 0) {
+      result.vectorPaths = vectorNode.vectorPaths.map((vp: VectorPath) => ({
+        windingRule: vp.windingRule,
+        data: vp.data,
+      }));
+    }
+  }
+
+  if ("rotation" in node) {
+    result.rotation = (node as any).rotation;
+  }
+
+  if (node.type === "LINE") {
+    const line = node as LineNode;
+    const radians = -line.rotation * (Math.PI / 180);
+    const length = line.width;
+    result.endPoint = {
+      x: line.absoluteBoundingBox
+        ? line.absoluteBoundingBox.x + Math.cos(radians) * length
+        : (line as any).x + Math.cos(radians) * length,
+      y: line.absoluteBoundingBox
+        ? line.absoluteBoundingBox.y + Math.sin(radians) * length
+        : (line as any).y + Math.sin(radians) * length,
+    };
+  }
+
   if ("layoutMode" in node) {
     result.layoutMode = (node as any).layoutMode;
   }
 
-  // Opacity
   if ("opacity" in node) {
     result.opacity = (node as any).opacity;
   }

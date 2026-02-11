@@ -41,7 +41,7 @@ registerTool("create_page", {
 registerTool("get_node_by_id", {
   title: "Get Node By ID",
   description:
-    "Get detailed information about a specific node including type, name, bounds, parent, and children names/ids. Filtered to exclude vectorPaths, imageRef, and boundVariables.",
+    "Get detailed information about a specific node including type, name, bounds, parent, and children names/ids. Includes vectorPaths for VECTOR nodes. Filtered to exclude imageRef and boundVariables.",
   inputSchema: {
     nodeId: z.string().describe("The ID of the node to inspect"),
   },

@@ -87,36 +87,43 @@ function rejectAllPending(reason: string): void {
 export function startBridge(): void {
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
 
-  Bun.serve({
-    port,
-    fetch(req, server) {
-      const upgraded = server.upgrade(req);
-      if (upgraded) return undefined;
-      return new Response("Rune WebSocket Bridge", { status: 200 });
-    },
-    websocket: {
-      open(ws: ServerWebSocket<unknown>) {
-        if (pluginSocket) {
-          logger.warn("Plugin reconnected — replacing existing connection");
-          rejectAllPending("Plugin reconnected");
-        }
-        pluginSocket = ws;
-        logger.info("Figma plugin connected");
+  try {
+    Bun.serve({
+      port,
+      fetch(req, server) {
+        const upgraded = server.upgrade(req);
+        if (upgraded) return undefined;
+        return new Response("Rune WebSocket Bridge", { status: 200 });
       },
-      message(ws: ServerWebSocket<unknown>, message: string | Buffer) {
-        if (ws === pluginSocket) {
-          handlePluginMessage(message);
-        }
+      websocket: {
+        open(ws: ServerWebSocket<unknown>) {
+          if (pluginSocket) {
+            logger.warn("Plugin reconnected — replacing existing connection");
+            rejectAllPending("Plugin reconnected");
+          }
+          pluginSocket = ws;
+          logger.info("Figma plugin connected");
+        },
+        message(ws: ServerWebSocket<unknown>, message: string | Buffer) {
+          if (ws === pluginSocket) {
+            handlePluginMessage(message);
+          }
+        },
+        close(ws: ServerWebSocket<unknown>) {
+          if (ws === pluginSocket) {
+            pluginSocket = null;
+            rejectAllPending("Figma plugin disconnected");
+            logger.info("Figma plugin disconnected");
+          }
+        },
       },
-      close(ws: ServerWebSocket<unknown>) {
-        if (ws === pluginSocket) {
-          pluginSocket = null;
-          rejectAllPending("Figma plugin disconnected");
-          logger.info("Figma plugin disconnected");
-        }
-      },
-    },
-  });
+    });
 
-  logger.info(`WebSocket bridge listening on ws://localhost:${port}`);
+    logger.info(`WebSocket bridge listening on ws://localhost:${port}`);
+  } catch (err) {
+    logger.warn(
+      `Bridge failed to start on port ${port} (${err instanceof Error ? err.message : String(err)}). ` +
+      `Tools will return "Figma plugin is not connected" until the port is available and the server is restarted.`,
+    );
+  }
 }

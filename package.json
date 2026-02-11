@@ -13,7 +13,7 @@
     "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --fix ."
   },
   "author": "",
-  "license": "",
+  "license": "MIT WITH Commons-Clause-1.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "sharp": "^0.34.5",

@@ -1,6 +1,6 @@
 import { commandRegistry } from './commands/index';
 
-figma.showUI(__html__, { width: 300, height: 120, themeColors: true });
+figma.showUI(__html__, { width: 200, height: 52, themeColors: true });
 
 figma.ui.onmessage = async (msg: { id?: string; type?: string; params?: Record<string, any>; storage_result?: any; storage_key?: string }) => {
   if (msg.type === 'client_storage_set' && msg.storage_key !== undefined) {

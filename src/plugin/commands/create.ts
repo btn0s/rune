@@ -11,7 +11,10 @@ async function getParent(parentId?: string): Promise<BaseNode & ChildrenMixin> {
 }
 
 function applyFill(node: GeometryMixin, color?: { r: number; g: number; b: number; a?: number }): void {
-  if (!color) return;
+  if (!color) {
+    node.fills = [];
+    return;
+  }
   const paint: SolidPaint = {
     type: 'SOLID',
     color: { r: color.r, g: color.g, b: color.b },
@@ -21,7 +24,7 @@ function applyFill(node: GeometryMixin, color?: { r: number; g: number; b: numbe
 }
 
 function applyStroke(
-  node: GeometryMixin & IndividualStrokesMixin,
+  node: GeometryMixin,
   color?: { r: number; g: number; b: number; a?: number },
   weight?: number,
 ): void {
@@ -32,7 +35,7 @@ function applyStroke(
     opacity: color.a ?? 1,
   };
   node.strokes = [paint];
-  if (weight !== undefined) node.strokeWeight = weight;
+  if (weight !== undefined) (node as any).strokeWeight = weight;
 }
 
 function creationResult(node: SceneNode) {
@@ -40,7 +43,7 @@ function creationResult(node: SceneNode) {
 }
 
 commandRegistry.set('create_rectangle', async (params) => {
-  const { x, y, width, height, name, parentId, fillColor, cornerRadius } = params;
+  const { x, y, width, height, name, parentId, fillColor, cornerRadius, strokeColor, strokeWeight, strokeAlign } = params;
   const rect = figma.createRectangle();
   rect.x = x;
   rect.y = y;
@@ -48,28 +51,31 @@ commandRegistry.set('create_rectangle', async (params) => {
   rect.name = name ?? 'Rectangle';
   if (cornerRadius !== undefined) rect.cornerRadius = cornerRadius;
   applyFill(rect, fillColor);
+  applyStroke(rect, strokeColor, strokeWeight);
+  if (strokeAlign) rect.strokeAlign = strokeAlign;
   (await getParent(parentId)).appendChild(rect);
   return creationResult(rect);
 });
 
 commandRegistry.set('create_ellipse', async (params) => {
-  const { x, y, width, height, name, parentId, fillColor } = params;
+  const { x, y, width, height, name, parentId, fillColor, strokeColor, strokeWeight, strokeAlign } = params;
   const ellipse = figma.createEllipse();
   ellipse.x = x;
   ellipse.y = y;
   ellipse.resize(width, height);
   ellipse.name = name ?? 'Ellipse';
   applyFill(ellipse, fillColor);
+  applyStroke(ellipse, strokeColor, strokeWeight);
+  if (strokeAlign) ellipse.strokeAlign = strokeAlign;
   (await getParent(parentId)).appendChild(ellipse);
   return creationResult(ellipse);
 });
 
 commandRegistry.set('create_line', async (params) => {
-  const { startX, startY, endX, endY, name, parentId, strokeColor, strokeWeight } = params;
+  const { startX, startY, endX, endY, name, parentId, strokeColor, strokeWeight, strokeAlign } = params;
   const line = figma.createLine();
   line.x = startX;
   line.y = startY;
-  // Line is 0-height by default; use rotation + length to define endpoint
   const dx = endX - startX;
   const dy = endY - startY;
   const length = Math.sqrt(dx * dx + dy * dy);
@@ -77,6 +83,7 @@ commandRegistry.set('create_line', async (params) => {
   line.rotation = -Math.atan2(dy, dx) * (180 / Math.PI);
   line.name = name ?? 'Line';
   applyStroke(line, strokeColor ?? { r: 0, g: 0, b: 0 }, strokeWeight ?? 1);
+  if (strokeAlign) line.strokeAlign = strokeAlign;
   (await getParent(parentId)).appendChild(line);
   return creationResult(line);
 });
@@ -84,6 +91,7 @@ commandRegistry.set('create_line', async (params) => {
 commandRegistry.set('create_frame', async (params) => {
   const {
     x, y, width, height, name, parentId, fillColor,
+    strokeColor, strokeWeight, strokeAlign,
     layoutMode, layoutWrap,
     paddingTop, paddingRight, paddingBottom, paddingLeft,
     itemSpacing, primaryAxisAlignItems, counterAxisAlignItems,
@@ -96,6 +104,8 @@ commandRegistry.set('create_frame', async (params) => {
   frame.resize(width, height);
   frame.name = name ?? 'Frame';
   applyFill(frame, fillColor);
+  applyStroke(frame, strokeColor, strokeWeight);
+  if (strokeAlign) frame.strokeAlign = strokeAlign;
 
   if (layoutMode && layoutMode !== 'NONE') {
     frame.layoutMode = layoutMode;
@@ -160,13 +170,13 @@ commandRegistry.set('create_instance', async (params) => {
 commandRegistry.set('create_text', async (params) => {
   const {
     x, y, text, fontSize, fontFamily, fontWeight,
-    fontColor, textAlignHorizontal, name, parentId,
+    fontColor, textAlignHorizontal, letterSpacing, lineHeight,
+    name, parentId,
   } = params;
 
   const family = fontFamily ?? 'Inter';
   const style = fontWeightToStyle(fontWeight ?? 400);
 
-  // CRITICAL: Must load font before any text operations
   await figma.loadFontAsync({ family, style });
 
   const textNode = figma.createText();
@@ -190,8 +200,41 @@ commandRegistry.set('create_text', async (params) => {
     textNode.textAlignHorizontal = textAlignHorizontal;
   }
 
+  if (letterSpacing !== undefined) {
+    textNode.letterSpacing = { value: letterSpacing, unit: 'PERCENT' };
+  }
+
+  if (lineHeight !== undefined) {
+    textNode.lineHeight = lineHeight === 'AUTO'
+      ? { unit: 'AUTO' }
+      : { value: lineHeight, unit: 'PIXELS' };
+  }
+
   (await getParent(parentId)).appendChild(textNode);
   return creationResult(textNode);
+});
+
+commandRegistry.set('create_vector', async (params) => {
+  const { x, y, width, height, name, parentId, svgPath, fillColor, strokeColor, strokeWeight, strokeAlign } = params;
+  const vector = figma.createVector();
+  vector.x = x ?? 0;
+  vector.y = y ?? 0;
+  vector.name = name ?? 'Vector';
+
+  if (svgPath) {
+    vector.vectorPaths = [{
+      windingRule: 'NONZERO',
+      data: svgPath,
+    }];
+  }
+
+  if (width && height) vector.resize(width, height);
+  applyFill(vector, fillColor);
+  applyStroke(vector, strokeColor, strokeWeight);
+  if (strokeAlign) vector.strokeAlign = strokeAlign;
+
+  (await getParent(parentId)).appendChild(vector);
+  return creationResult(vector);
 });
 
 function fontWeightToStyle(weight: number): string {

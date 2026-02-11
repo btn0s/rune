@@ -83,6 +83,8 @@ commandRegistry.set("set_text_style", async (params) => {
     textAlignVertical,
     textAutoResize,
     textDecoration,
+    letterSpacing,
+    lineHeight,
   } = params;
 
   const textNode = await getTextNode(nodeId);
@@ -124,6 +126,16 @@ commandRegistry.set("set_text_style", async (params) => {
 
   if (textDecoration) {
     textNode.textDecoration = textDecoration;
+  }
+
+  if (letterSpacing !== undefined) {
+    textNode.letterSpacing = { value: letterSpacing, unit: "PERCENT" };
+  }
+
+  if (lineHeight !== undefined) {
+    textNode.lineHeight = lineHeight === "AUTO"
+      ? { unit: "AUTO" }
+      : { value: lineHeight, unit: "PIXELS" };
   }
 
   return {

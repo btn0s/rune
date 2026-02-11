@@ -263,4 +263,4 @@ Figma requires fonts to be explicitly loaded before text operations. Rune handle
 
 ## License
 
-MIT
+MIT + [Commons Clause](https://commonsclause.com/) — free to use, modify, and distribute, but not to sell.

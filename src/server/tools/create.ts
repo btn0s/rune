@@ -19,6 +19,9 @@ registerTool("create_rectangle", {
     name: z.string().optional().describe("Node name"),
     parentId: z.string().optional().describe("Parent node ID to append to"),
     fillColor: rgbaSchema.optional().describe("Fill color"),
+    strokeColor: rgbaSchema.optional().describe("Stroke color"),
+    strokeWeight: z.number().positive().optional().describe("Stroke weight"),
+    strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional().describe("Stroke alignment"),
     cornerRadius: z.number().min(0).optional().describe("Corner radius"),
   },
 }, async (args) => {
@@ -35,6 +38,9 @@ registerTool("create_ellipse", {
     name: z.string().optional().describe("Node name"),
     parentId: z.string().optional().describe("Parent node ID to append to"),
     fillColor: rgbaSchema.optional().describe("Fill color"),
+    strokeColor: rgbaSchema.optional().describe("Stroke color"),
+    strokeWeight: z.number().positive().optional().describe("Stroke weight"),
+    strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional().describe("Stroke alignment"),
   },
 }, async (args) => {
   return sendCommand("create_ellipse", args);
@@ -51,6 +57,7 @@ registerTool("create_line", {
     parentId: z.string().optional().describe("Parent node ID to append to"),
     strokeColor: rgbaSchema.optional().describe("Stroke color"),
     strokeWeight: z.number().positive().optional().describe("Stroke weight"),
+    strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional().describe("Stroke alignment"),
   },
 }, async (args) => {
   return sendCommand("create_line", args);
@@ -66,6 +73,9 @@ registerTool("create_frame", {
     name: z.string().optional().describe("Node name"),
     parentId: z.string().optional().describe("Parent node ID to append to"),
     fillColor: rgbaSchema.optional().describe("Fill color"),
+    strokeColor: rgbaSchema.optional().describe("Stroke color"),
+    strokeWeight: z.number().positive().optional().describe("Stroke weight"),
+    strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional().describe("Stroke alignment"),
     layoutMode: z.enum(["NONE", "HORIZONTAL", "VERTICAL"]).optional().describe("Auto-layout direction"),
     layoutWrap: z.enum(["NO_WRAP", "WRAP"]).optional().describe("Whether auto-layout wraps children"),
     paddingTop: z.number().min(0).optional().describe("Top padding"),
@@ -131,9 +141,30 @@ registerTool("create_text", {
     fontWeight: z.number().optional().describe("Font weight (100-900, default: 400)"),
     fontColor: rgbaSchema.optional().describe("Text color"),
     textAlignHorizontal: z.enum(["LEFT", "CENTER", "RIGHT", "JUSTIFIED"]).optional().describe("Horizontal text alignment"),
+    letterSpacing: z.number().optional().describe("Letter spacing as percentage (e.g. 10 = 10%)"),
+    lineHeight: z.union([z.number().positive(), z.literal("AUTO")]).optional().describe("Line height in pixels, or 'AUTO'"),
     name: z.string().optional().describe("Node name"),
     parentId: z.string().optional().describe("Parent node ID to append to"),
   },
 }, async (args) => {
   return sendCommand("create_text", args);
+});
+
+registerTool("create_vector", {
+  description: "Create a vector node in Figma from SVG path data. Supports arbitrary shapes via SVG path commands (M, L, C, Q, Z, etc.).",
+  inputSchema: {
+    x: z.number().describe("X position"),
+    y: z.number().describe("Y position"),
+    width: z.number().positive().optional().describe("Width to resize to"),
+    height: z.number().positive().optional().describe("Height to resize to"),
+    svgPath: z.string().describe("SVG path data string (e.g. 'M 0 0 L 100 0 L 100 100 Z')"),
+    name: z.string().optional().describe("Node name"),
+    parentId: z.string().optional().describe("Parent node ID to append to"),
+    fillColor: rgbaSchema.optional().describe("Fill color"),
+    strokeColor: rgbaSchema.optional().describe("Stroke color"),
+    strokeWeight: z.number().positive().optional().describe("Stroke weight"),
+    strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional().describe("Stroke alignment"),
+  },
+}, async (args) => {
+  return sendCommand("create_vector", args);
 });
