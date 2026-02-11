@@ -4,26 +4,16 @@ Control Figma directly from AI assistants via the [Model Context Protocol](https
 
 ## Architecture
 
-```
-┌─────────────────────┐       stdio (JSON-RPC)       ┌──────────────────────┐
-│   MCP Client        │◄────────────────────────────►│   Rune MCP Server    │
-│ (Claude, Cursor,    │                               │   (Bun runtime)      │
-│  OpenCode, etc.)    │                               │                      │
-└─────────────────────┘                               └──────────┬───────────┘
-                                                                 │
-                                                        WebSocket │ ws://localhost:3055
-                                                                 │
-                                                      ┌──────────▼───────────┐
-                                                      │   Figma Plugin UI    │
-                                                      │   (iframe bridge)    │
-                                                      └──────────┬───────────┘
-                                                                 │
-                                                       postMessage│
-                                                                 │
-                                                      ┌──────────▼───────────┐
-                                                      │   Figma Plugin Main  │
-                                                      │   (Figma API access) │
-                                                      └──────────────────────┘
+```mermaid
+graph LR
+    A["MCP Client<br/><small>Claude, Cursor, OpenCode, etc.</small>"]
+    B["Rune MCP Server<br/><small>Bun runtime</small>"]
+    C["Figma Plugin UI<br/><small>iframe bridge</small>"]
+    D["Figma Plugin Main<br/><small>Figma API access</small>"]
+
+    A -- "stdio (JSON-RPC)" --- B
+    B -- "WebSocket<br/><small>ws://localhost:3055</small>" --- C
+    C -- "postMessage" --- D
 ```
 
 **Data flow:** MCP Client → stdio → Rune Server → WebSocket → Plugin UI → postMessage → Plugin Main → Figma API → response flows back the same path.
@@ -108,7 +98,7 @@ Add to your OpenCode MCP configuration:
 
 ## Tool Reference
 
-Rune exposes **39 tools** across 8 categories:
+Rune exposes **38 tools** across 7 categories:
 
 ### Document & Navigation (11 tools)
 
@@ -176,12 +166,6 @@ Rune exposes **39 tools** across 8 categories:
 | `clone_node` | Duplicate a node with optional repositioning |
 | `rename_node` | Change a node's name |
 | `reparent_node` | Move a node to a different parent |
-
-### Export (1 tool)
-
-| Tool | Description |
-|------|-------------|
-| `export_node_as_image` | Export node as PNG, JPG, SVG, or PDF (base64) |
 
 ### Components (1 tool)
 
@@ -279,12 +263,6 @@ Figma requires fonts to be explicitly loaded before text operations. Rune handle
 - Use `get_node_children` with `limit` and `offset` for pagination (default: 50 children per page)
 - `find_nodes` caps results at 100 — use name/type filters to narrow results
 - Avoid calling `get_node_by_id` on the root page node with many children
-
-### Export timeouts
-
-- `export_node_as_image` has a 60-second timeout (vs 30s default for other tools)
-- Very large or complex nodes may take longer — try exporting at a lower `scale`
-- SVG export is generally faster than PNG for vector content
 
 ## License
 
