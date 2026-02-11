@@ -16,6 +16,7 @@
   "license": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "sharp": "^0.34.5",
     "zod": "^3.22.0"
   },
   "devDependencies": {

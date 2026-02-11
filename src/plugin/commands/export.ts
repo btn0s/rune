@@ -1,47 +1,39 @@
 import { commandRegistry } from "./registry";
 
-// ─── Export Node as Image ─────────────────────────────────────────────────────
+// ─── Export PNG ───────────────────────────────────────────────────────────────
 
-commandRegistry.set("export_node_as_image", async (params) => {
-  const { nodeId, format = "PNG", scale = 1 } = params;
-  if (!nodeId) throw new Error("nodeId is required");
+commandRegistry.set("export_png", async (params) => {
+  const { nodeId, scale = 1 } = params;
 
-  const node = await figma.getNodeByIdAsync(nodeId);
-  if (!node) throw new Error(`Node not found: ${nodeId}`);
-  if (node.type === "DOCUMENT" || node.type === "PAGE") {
-    throw new Error(`Cannot export ${node.type} node as image`);
+  let node: SceneNode;
+
+  if (nodeId) {
+    const found = await figma.getNodeByIdAsync(nodeId);
+    if (!found) throw new Error(`Node not found: ${nodeId}`);
+    if (found.type === "DOCUMENT" || found.type === "PAGE") {
+      throw new Error(`Cannot export a ${found.type} node. Provide a specific node ID.`);
+    }
+    node = found as SceneNode;
+  } else {
+    const sel = figma.currentPage.selection;
+    if (sel.length === 0) {
+      throw new Error("No nodeId provided and nothing is selected. Provide a nodeId or select a node.");
+    }
+    node = sel[0];
   }
 
-  const exportNode = node as SceneNode & ExportMixin;
+  const bytes = await node.exportAsync({
+    format: "PNG",
+    constraint: { type: "SCALE", value: scale },
+  });
 
-  const settings: ExportSettings = format === "SVG"
-    ? { format: "SVG" }
-    : format === "PDF"
-      ? { format: "PDF" }
-      : format === "JPG"
-        ? { format: "JPG", constraint: { type: "SCALE", value: scale } }
-        : { format: "PNG", constraint: { type: "SCALE", value: scale } };
-
-  const bytes = await exportNode.exportAsync(settings);
-
-  // Convert Uint8Array to base64
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const imageData = btoa(binary);
-
-  const mimeTypes: Record<string, string> = {
-    PNG: "image/png",
-    JPG: "image/jpeg",
-    SVG: "image/svg+xml",
-    PDF: "application/pdf",
-  };
+  const base64 = figma.base64Encode(bytes);
 
   return {
-    imageData,
-    mimeType: mimeTypes[format] || "image/png",
-    format,
-    size: bytes.length,
+    base64,
+    width: ("width" in node) ? (node as any).width * scale : undefined,
+    height: ("height" in node) ? (node as any).height * scale : undefined,
+    nodeId: node.id,
+    nodeName: node.name,
   };
 });

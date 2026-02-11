@@ -6,9 +6,14 @@ import "./tools/document";
 import "./tools/layout";
 import "./tools/style";
 import "./tools/manipulate";
-import "./tools/export";
 import "./tools/components";
 import "./tools/text";
+import "./tools/batch";
+import "./tools/search";
+import "./tools/transfer";
+import "./tools/fonts";
+import "./tools/tokens";
+import "./tools/export";
 
 // ─── MCP Prompts ──────────────────────────────────────────────────────────────
 
@@ -132,6 +137,16 @@ Page
 async function main(): Promise<void> {
   startBridge();
   await startMcpServer();
+
+  process.stdin.on("end", () => {
+    logger.info("stdin closed — MCP client disconnected, shutting down");
+    process.exit(0);
+  });
+
+  process.stdin.on("close", () => {
+    logger.info("stdin close event — shutting down");
+    process.exit(0);
+  });
 }
 
 main().catch((err) => {
