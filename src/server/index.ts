@@ -14,6 +14,7 @@ import "./tools/transfer";
 import "./tools/fonts";
 import "./tools/tokens";
 import "./tools/export";
+import "./tools/connection";
 
 // ─── MCP Prompts ──────────────────────────────────────────────────────────────
 

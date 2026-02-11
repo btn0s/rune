@@ -49,6 +49,7 @@
     let ws = null;
     let reconnectDelay = 1000;
     let reconnectTimer = null;
+    let fileIdentity = null;
 
     const dot = document.getElementById('dot');
     const statusText = document.getElementById('statusText');
@@ -76,7 +77,11 @@
       ws.onopen = function() {
         reconnectDelay = 1000;
         setConnected(true);
-        ws.send(JSON.stringify({ type: 'plugin_connected' }));
+        if (fileIdentity) {
+          ws.send(JSON.stringify({ type: 'plugin_identity', fileKey: fileIdentity.fileKey, fileName: fileIdentity.fileName }));
+        } else {
+          ws.send(JSON.stringify({ type: 'plugin_connected' }));
+        }
       };
 
       ws.onmessage = function(event) {
@@ -108,6 +113,14 @@
     window.onmessage = function(event) {
       const msg = event.data.pluginMessage;
       if (!msg) return;
+
+      if (msg.type === 'file_identity') {
+        fileIdentity = { fileKey: msg.fileKey, fileName: msg.fileName };
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'plugin_identity', fileKey: msg.fileKey, fileName: msg.fileName }));
+        }
+        return;
+      }
 
       if (msg.type === 'plugin_closing') {
         if (ws && ws.readyState === WebSocket.OPEN) {

@@ -11,11 +11,65 @@ interface PendingRequest {
   timeout: ReturnType<typeof setTimeout>;
 }
 
-let pluginSocket: ServerWebSocket<unknown> | null = null;
+export interface PluginConnection {
+  socket: ServerWebSocket<unknown>;
+  fileKey: string;
+  fileName: string;
+  connectedAt: number;
+}
+
+const connections = new Map<string, PluginConnection>();
+let activeFileKey: string | null = null;
 const pendingRequests = new Map<string, PendingRequest>();
 
+function getActiveConnection(): PluginConnection | null {
+  if (activeFileKey) {
+    const conn = connections.get(activeFileKey);
+    if (conn) return conn;
+    activeFileKey = null;
+  }
+  const first = connections.values().next();
+  if (!first.done) {
+    activeFileKey = first.value.fileKey;
+    return first.value;
+  }
+  return null;
+}
+
+function getConnectionBySocket(ws: ServerWebSocket<unknown>): PluginConnection | null {
+  for (const conn of connections.values()) {
+    if (conn.socket === ws) return conn;
+  }
+  return null;
+}
+
 export function isPluginConnected(): boolean {
-  return pluginSocket !== null;
+  return connections.size > 0;
+}
+
+export function listConnections(): Array<{ fileKey: string; fileName: string; isActive: boolean; connectedAt: number }> {
+  return Array.from(connections.values()).map((conn) => ({
+    fileKey: conn.fileKey,
+    fileName: conn.fileName,
+    isActive: conn.fileKey === activeFileKey,
+    connectedAt: conn.connectedAt,
+  }));
+}
+
+export function getActiveFile(): { fileKey: string; fileName: string } | null {
+  const conn = getActiveConnection();
+  if (!conn) return null;
+  return { fileKey: conn.fileKey, fileName: conn.fileName };
+}
+
+export function setActiveFile(fileKey: string): { fileKey: string; fileName: string } {
+  const conn = connections.get(fileKey);
+  if (!conn) {
+    throw new Error(`No connection with fileKey "${fileKey}". Use list_connections to see available files.`);
+  }
+  activeFileKey = fileKey;
+  logger.info(`Active file set to "${conn.fileName}" (${fileKey})`);
+  return { fileKey: conn.fileKey, fileName: conn.fileName };
 }
 
 export function sendCommand(
@@ -24,8 +78,9 @@ export function sendCommand(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    if (!pluginSocket) {
-      reject(new Error("Figma plugin is not connected"));
+    const conn = getActiveConnection();
+    if (!conn) {
+      reject(new Error("No Figma plugin is connected"));
       return;
     }
 
@@ -39,35 +94,62 @@ export function sendCommand(
     pendingRequests.set(id, { resolve, reject, timeout });
 
     const message: CommandMessage = { id, type, params };
-    pluginSocket.send(JSON.stringify(message));
-    logger.debug(`Sent command: ${type} (${id})`);
+    conn.socket.send(JSON.stringify(message));
+    logger.debug(`Sent command: ${type} (${id}) → "${conn.fileName}"`);
   });
 }
 
-function handlePluginMessage(rawMessage: string | Buffer): void {
+function handlePluginMessage(ws: ServerWebSocket<unknown>, rawMessage: string | Buffer): void {
   try {
     const data = JSON.parse(
       typeof rawMessage === "string" ? rawMessage : rawMessage.toString(),
-    ) as ResponseMessage;
+    );
 
-    if (!data.id) {
+    if (data.type === "plugin_identity") {
+      const { fileKey, fileName } = data;
+      if (!fileKey || !fileName) {
+        logger.warn("plugin_identity missing fileKey or fileName");
+        return;
+      }
+
+      connections.set(fileKey, {
+        socket: ws,
+        fileKey,
+        fileName,
+        connectedAt: Date.now(),
+      });
+
+      if (!activeFileKey) {
+        activeFileKey = fileKey;
+      }
+
+      logger.info(`Plugin registered: "${fileName}" (${fileKey}) [${connections.size} total]`);
+      return;
+    }
+
+    if (data.type === "plugin_connected") {
+      return;
+    }
+
+    const response = data as ResponseMessage;
+    if (!response.id) {
       logger.warn(`Received message without id: ${JSON.stringify(data)}`);
       return;
     }
 
-    const pending = pendingRequests.get(data.id);
+    const pending = pendingRequests.get(response.id);
     if (!pending) {
-      logger.warn(`Received response for unknown request: ${data.id}`);
+      logger.warn(`Received response for unknown request: ${response.id}`);
       return;
     }
 
     clearTimeout(pending.timeout);
-    pendingRequests.delete(data.id);
+    pendingRequests.delete(response.id);
 
-    if (data.error) {
-      pending.reject(new Error(data.error));
+    if (response.error) {
+      pending.reject(new Error(response.error));
     } else {
-      pending.resolve(data.result);
+      pending.resolve(response.result);
     }
   } catch (err) {
     logger.error(
@@ -76,12 +158,23 @@ function handlePluginMessage(rawMessage: string | Buffer): void {
   }
 }
 
-function rejectAllPending(reason: string): void {
-  for (const [id, pending] of pendingRequests) {
-    clearTimeout(pending.timeout);
-    pending.reject(new Error(reason));
+function handleSocketClose(ws: ServerWebSocket<unknown>): void {
+  const conn = getConnectionBySocket(ws);
+  if (!conn) return;
+
+  connections.delete(conn.fileKey);
+  if (activeFileKey === conn.fileKey) {
+    activeFileKey = null;
   }
-  pendingRequests.clear();
+  logger.info(`Plugin disconnected: "${conn.fileName}" (${conn.fileKey}) [${connections.size} remaining]`);
+
+  if (connections.size === 0) {
+    for (const [, pending] of pendingRequests) {
+      clearTimeout(pending.timeout);
+      pending.reject(new Error("All Figma plugins disconnected"));
+    }
+    pendingRequests.clear();
+  }
 }
 
 export function startBridge(): void {
@@ -96,25 +189,14 @@ export function startBridge(): void {
         return new Response("Rune WebSocket Bridge", { status: 200 });
       },
       websocket: {
-        open(ws: ServerWebSocket<unknown>) {
-          if (pluginSocket) {
-            logger.warn("Plugin reconnected — replacing existing connection");
-            rejectAllPending("Plugin reconnected");
-          }
-          pluginSocket = ws;
-          logger.info("Figma plugin connected");
+        open(_ws: ServerWebSocket<unknown>) {
+          logger.info("New WebSocket connection (awaiting identity)");
         },
         message(ws: ServerWebSocket<unknown>, message: string | Buffer) {
-          if (ws === pluginSocket) {
-            handlePluginMessage(message);
-          }
+          handlePluginMessage(ws, message);
         },
         close(ws: ServerWebSocket<unknown>) {
-          if (ws === pluginSocket) {
-            pluginSocket = null;
-            rejectAllPending("Figma plugin disconnected");
-            logger.info("Figma plugin disconnected");
-          }
+          handleSocketClose(ws);
         },
       },
     });
@@ -123,7 +205,7 @@ export function startBridge(): void {
   } catch (err) {
     logger.warn(
       `Bridge failed to start on port ${port} (${err instanceof Error ? err.message : String(err)}). ` +
-      `Tools will return "Figma plugin is not connected" until the port is available and the server is restarted.`,
+      `Tools will return "No Figma plugin is connected" until the port is available and the server is restarted.`,
     );
   }
 }
