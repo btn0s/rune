@@ -137,22 +137,10 @@ export default function Page() {
               <li>
                 <div className="mb-3 flex gap-4">
                   <span className="shrink-0 text-white/20">02</span>
-                  <span className="text-white/70">Start the server</span>
-                </div>
-                <CodeBlock copyText="bun run apps/server/src/index.ts">
-                  <span className="text-white/60">
-                    bun run apps/server/src/index.ts
-                  </span>
-                </CodeBlock>
-              </li>
-
-              <li>
-                <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">03</span>
                   <span className="text-white/70">Add to your MCP config</span>
                 </div>
                 <CodeBlock
-                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "url": "http://localhost:3056/mcp"\n    }\n  }\n}`}
+                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bun", "run", "/path/to/rune/apps/server/src/index.ts"]\n    }\n  }\n}`}
                 >
                   <span className="text-white/20">{`{`}</span>
                   {"\n"}
@@ -162,8 +150,8 @@ export default function Page() {
                   <span className="text-white/50">{`"rune"`}</span>
                   <span className="text-white/20">{`: {`}</span>
                   {"\n"}
-                  <span className="text-white/20">{`      "url": `}</span>
-                  <span className="text-white/60">{`"http://localhost:3056/mcp"`}</span>
+                  <span className="text-white/20">{`      "command": `}</span>
+                  <span className="text-white/60">{`["bun", "run", "/path/to/rune/apps/server/src/index.ts"]`}</span>
                   {"\n"}
                   <span className="text-white/20">{`    }`}</span>
                   {"\n"}
@@ -179,7 +167,7 @@ export default function Page() {
 
               <li>
                 <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">04</span>
+                  <span className="shrink-0 text-white/20">03</span>
                   <span className="text-white/70">Add the Figma plugin</span>
                 </div>
                 <p className="text-white/40">
