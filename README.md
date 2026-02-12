@@ -22,7 +22,7 @@ Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client. Require
 
 ### 2. Add the Figma plugin
 
-In Figma, go to **Plugins → Development → Import plugin from manifest** and select `apps/plugin/manifest.json` from the cloned repo. Run the plugin to connect.
+Install the [rune Figma plugin](https://www.figma.com/community/plugin/1602795503714672621) and run it to connect.
 
 ### Development
 

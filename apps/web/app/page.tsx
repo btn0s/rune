@@ -166,15 +166,16 @@ export default function Page() {
                   <span className="text-white/70">Add the Figma plugin</span>
                 </div>
                 <p className="text-white/40">
-                  In Figma, go to{" "}
-                  <span className="text-white/60">
-                    Plugins → Development → Import plugin from manifest
-                  </span>{" "}
-                  and select{" "}
-                  <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-xs text-white/50">
-                    apps/plugin/manifest.json
-                  </span>{" "}
-                  from the cloned repo. Run the plugin to connect.
+                  Install the{" "}
+                  <a
+                    href="https://www.figma.com/community/plugin/1602795503714672621"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/60 underline transition-colors hover:text-white/80"
+                  >
+                    rune Figma plugin
+                  </a>{" "}
+                  and run it to connect.
                 </p>
               </li>
             </ol>
