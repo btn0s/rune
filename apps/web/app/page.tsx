@@ -1,15 +1,147 @@
-import { Button } from "@workspace/ui/components/button"
+import type { Metadata } from "next"
+import Image from "next/image"
+import { Github } from "lucide-react"
+import { CopyButton } from "@/components/copy-button"
+import { CodeBlock } from "@/components/code-block"
+import { FloatingNav } from "@/components/floating-nav"
+import logo from "./rune-logo.png"
+
+export const metadata: Metadata = {
+  title: "Rune",
+  description: "The MCP server for Figma.",
+}
 
 export default function Page() {
   return (
-    <div className="flex items-center justify-center min-h-svh">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Hello World</h1>
-        <div className="flex gap-2">
-          <Button>Button</Button>
-          <Button variant="outline">Outline</Button>
+    <div className="min-h-screen bg-[#0a0a0a] font-mono text-white/80 selection:bg-white/20">
+      <FloatingNav />
+
+      <header className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-6 py-4 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <Image
+            src={logo}
+            alt="Rune"
+            width={24}
+            height={24}
+            className="rounded"
+          />
+          <span className="text-sm text-white/70">rune</span>
         </div>
-      </div>
+        <a
+          href="https://github.com/btn0s/rune"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/30 transition-colors hover:text-white/70"
+        >
+          <Github className="h-4 w-4" />
+        </a>
+      </header>
+
+      <main className="mx-auto max-w-xl px-6 pb-32 pt-32">
+        <section id="overview" className="mb-24 scroll-mt-72">
+          <div className="mb-8 flex items-center gap-4">
+            <Image
+              src={logo}
+              alt="Rune"
+              width={48}
+              height={48}
+              className="rounded-lg"
+            />
+          </div>
+
+          <h1 className="mb-6 text-3xl font-normal leading-tight tracking-tight text-white">
+            Design with AI.
+            <br />
+            Build in Figma.
+          </h1>
+
+          <p className="mb-8 leading-relaxed text-white/40">
+            Rune is an MCP server and Figma plugin that lets AI coding agents
+            read, create, and manipulate designs directly in Figma. Connect your
+            favorite AI tool and start designing.
+          </p>
+
+          <CopyButton text="git clone https://github.com/btn0s/rune.git" />
+        </section>
+
+        <div className="mb-24 h-px w-full bg-white/5" />
+
+        <section id="get-started" className="mb-24 scroll-mt-72">
+          <h2 className="mb-8 text-xs uppercase tracking-widest text-white/30">
+            Get started
+          </h2>
+
+          <ol className="space-y-10 text-sm leading-relaxed">
+            <li>
+              <div className="mb-3 flex gap-4">
+                <span className="shrink-0 text-white/20">01</span>
+                <span className="text-white/70">Clone the repo</span>
+              </div>
+              <CodeBlock copyText="git clone https://github.com/btn0s/rune.git && cd rune && pnpm install">
+                <span className="text-white/60">git clone https://github.com/btn0s/rune.git</span>{"\n"}
+                <span className="text-white/60">cd rune && pnpm install</span>
+              </CodeBlock>
+            </li>
+
+            <li>
+              <div className="mb-3 flex gap-4">
+                <span className="shrink-0 text-white/20">02</span>
+                <span className="text-white/70">Start the server</span>
+              </div>
+              <CodeBlock copyText="pnpm server:http">
+                <span className="text-white/60">pnpm server:http</span>
+              </CodeBlock>
+            </li>
+
+            <li>
+              <div className="mb-3 flex gap-4">
+                <span className="shrink-0 text-white/20">03</span>
+                <span className="text-white/70">Add to your MCP config</span>
+              </div>
+              <CodeBlock copyText={`{\n  "mcpServers": {\n    "rune": {\n      "url": "http://localhost:3056/mcp"\n    }\n  }\n}`}>
+                <span className="text-white/20">{`{`}</span>{"\n"}
+                <span className="text-white/20">{`  "mcpServers": {`}</span>{"\n"}
+                <span className="text-white/20">{`    `}</span><span className="text-white/50">{`"rune"`}</span><span className="text-white/20">{`: {`}</span>{"\n"}
+                <span className="text-white/20">{`      "url": `}</span><span className="text-white/60">{`"http://localhost:3056/mcp"`}</span>{"\n"}
+                <span className="text-white/20">{`    }`}</span>{"\n"}
+                <span className="text-white/20">{`  }`}</span>{"\n"}
+                <span className="text-white/20">{`}`}</span>
+              </CodeBlock>
+              <p className="mt-3 text-xs text-white/30">
+                Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client.
+              </p>
+            </li>
+
+            <li>
+              <div className="mb-3 flex gap-4">
+                <span className="shrink-0 text-white/20">04</span>
+                <span className="text-white/70">Add the Figma plugin</span>
+              </div>
+              <p className="text-white/40">
+                In Figma, go to{" "}
+                <span className="text-white/60">Plugins → Development → Import plugin from manifest</span>
+                {" "}and select{" "}
+                <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-xs text-white/50">apps/plugin/manifest.json</span>
+                {" "}from the cloned repo. Run the plugin to connect.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <footer className="border-t border-white/5 pt-8 text-xs text-white/20">
+          <div className="flex items-center justify-between">
+            <span>rune v0.0.1</span>
+            <a
+              href="https://github.com/btn0s/rune"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-white/50"
+            >
+              github →
+            </a>
+          </div>
+        </footer>
+      </main>
     </div>
   )
 }
