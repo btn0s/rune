@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
@@ -28,7 +29,9 @@ export function registerTool<Args extends ZodRawShapeCompat>(
     try {
       const result = await handler(args);
       const text = JSON.stringify(result);
-      logger.info(`Tool "${name}" result type: ${typeof result}, text length: ${text?.length}, text preview: ${text?.slice(0, 200)}`);
+      logger.info(
+        `Tool "${name}" result type: ${typeof result}, text length: ${text?.length}, text preview: ${text?.slice(0, 200)}`,
+      );
       const response: CallToolResult = {
         content: [
           {
@@ -37,11 +40,12 @@ export function registerTool<Args extends ZodRawShapeCompat>(
           },
         ],
       };
-      logger.info(`Tool "${name}" response: ${JSON.stringify(response).slice(0, 300)}`);
+      logger.info(
+        `Tool "${name}" response: ${JSON.stringify(response).slice(0, 300)}`,
+      );
       return response;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : String(err);
+      const message = err instanceof Error ? err.message : String(err);
       logger.error(`Tool "${name}" failed: ${message}`);
       return {
         content: [
@@ -56,16 +60,24 @@ export function registerTool<Args extends ZodRawShapeCompat>(
   };
 
   if (config.inputSchema) {
-    mcpServer.registerTool(name, {
-      title: config.title,
-      description: config.description,
-      inputSchema: config.inputSchema,
-    }, wrappedHandler as any);
+    mcpServer.registerTool(
+      name,
+      {
+        title: config.title,
+        description: config.description,
+        inputSchema: config.inputSchema,
+      },
+      wrappedHandler as any,
+    );
   } else {
-    mcpServer.registerTool(name, {
-      title: config.title,
-      description: config.description,
-    }, wrappedHandler as any);
+    mcpServer.registerTool(
+      name,
+      {
+        title: config.title,
+        description: config.description,
+      },
+      wrappedHandler as any,
+    );
   }
 
   logger.debug(`Registered tool: ${name}`);
@@ -86,11 +98,12 @@ export function registerRawTool<Args extends ZodRawShapeCompat>(
     logger.info(`Tool "${name}" called with args: ${JSON.stringify(args)}`);
     try {
       const result = await handler(args);
-      logger.info(`Tool "${name}" returned ${result.content.length} content block(s)`);
+      logger.info(
+        `Tool "${name}" returned ${result.content.length} content block(s)`,
+      );
       return result;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : String(err);
+      const message = err instanceof Error ? err.message : String(err);
       logger.error(`Tool "${name}" failed: ${message}`);
       return {
         content: [
@@ -105,19 +118,33 @@ export function registerRawTool<Args extends ZodRawShapeCompat>(
   };
 
   if (config.inputSchema) {
-    mcpServer.registerTool(name, {
-      title: config.title,
-      description: config.description,
-      inputSchema: config.inputSchema,
-    }, wrappedHandler as any);
+    mcpServer.registerTool(
+      name,
+      {
+        title: config.title,
+        description: config.description,
+        inputSchema: config.inputSchema,
+      },
+      wrappedHandler as any,
+    );
   } else {
-    mcpServer.registerTool(name, {
-      title: config.title,
-      description: config.description,
-    }, wrappedHandler as any);
+    mcpServer.registerTool(
+      name,
+      {
+        title: config.title,
+        description: config.description,
+      },
+      wrappedHandler as any,
+    );
   }
 
   logger.debug(`Registered raw tool: ${name}`);
+}
+
+export async function startStdioMcpServer(): Promise<void> {
+  const transport = new StdioServerTransport();
+  await mcpServer.connect(transport);
+  logger.info("MCP server running on stdio");
 }
 
 export async function startHttpMcpServer(port?: number): Promise<void> {
@@ -140,7 +167,8 @@ export async function startHttpMcpServer(port?: number): Promise<void> {
           headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, mcp-session-id, mcp-protocol-version",
+            "Access-Control-Allow-Headers":
+              "Content-Type, mcp-session-id, mcp-protocol-version",
           },
         });
       }

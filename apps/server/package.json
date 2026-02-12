@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "rune-mcp": "src/index.ts"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outfile dist/server.js --target node",
     "start": "bun src/index.ts",

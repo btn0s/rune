@@ -1,4 +1,4 @@
-import { startHttpMcpServer, mcpServer } from "./mcp";
+import { startStdioMcpServer, startHttpMcpServer, mcpServer } from "./mcp";
 import { startBridge } from "./bridge";
 import { logger } from "./logger";
 import "./tools/create";
@@ -20,17 +20,20 @@ import "./tools/export";
 
 // ─── MCP Prompts ──────────────────────────────────────────────────────────────
 
-mcpServer.registerPrompt("design_strategy", {
-  title: "Design Strategy",
-  description:
-    "Guidance for AI on how to approach Figma design tasks using Rune MCP tools. Covers best practices for creating UI components, structuring layouts, and applying styles.",
-}, async () => ({
-  messages: [
-    {
-      role: "user" as const,
-      content: {
-        type: "text" as const,
-        text: `You are an expert UI designer working in Figma through the Rune MCP server. Follow these guidelines:
+mcpServer.registerPrompt(
+  "design_strategy",
+  {
+    title: "Design Strategy",
+    description:
+      "Guidance for AI on how to approach Figma design tasks using Rune MCP tools. Covers best practices for creating UI components, structuring layouts, and applying styles.",
+  },
+  async () => ({
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `You are an expert UI designer working in Figma through the Rune MCP server. Follow these guidelines:
 
 ## General Approach
 1. **Always start by inspecting the document**: Use \`get_document_info\` and \`get_node_children\` to understand the current page structure before making changes.
@@ -67,22 +70,26 @@ mcpServer.registerPrompt("design_strategy", {
 - After creating a composition, use \`get_node_children\` to verify the structure
 - Use \`zoom_to_fit\` to bring the result into view
 - Use \`get_node_style\` to verify styling was applied correctly`,
+        },
       },
-    },
-  ],
-}));
+    ],
+  }),
+);
 
-mcpServer.registerPrompt("component_hierarchy", {
-  title: "Component Hierarchy",
-  description:
-    "Guidance on structuring parent-child relationships and component composition in Figma designs.",
-}, async () => ({
-  messages: [
-    {
-      role: "user" as const,
-      content: {
-        type: "text" as const,
-        text: `When building Figma designs through MCP tools, follow this hierarchy pattern:
+mcpServer.registerPrompt(
+  "component_hierarchy",
+  {
+    title: "Component Hierarchy",
+    description:
+      "Guidance on structuring parent-child relationships and component composition in Figma designs.",
+  },
+  async () => ({
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `When building Figma designs through MCP tools, follow this hierarchy pattern:
 
 ## Node Hierarchy (parent → child)
 \`\`\`
@@ -132,18 +139,32 @@ Page
 2. \`create_text\` — label (12px, medium weight, parentId: wrapper)
 3. \`create_frame\` — input (HORIZONTAL, padding 8/12, border stroke, cornerRadius 4, parentId: wrapper)
 4. \`create_text\` — placeholder text (14px, gray, parentId: input)`,
+        },
       },
-    },
-  ],
-}));
+    ],
+  }),
+);
 
 async function main(): Promise<void> {
-  const portFlagIndex = process.argv.indexOf("--port");
-  const httpPort = portFlagIndex !== -1 ? parseInt(process.argv[portFlagIndex + 1], 10) : undefined;
+  const useHttp = process.argv.includes("--http");
 
   startBridge();
-  await startHttpMcpServer(httpPort);
-  logger.info("Running in HTTP mode — server stays alive until manually stopped");
+
+  if (useHttp) {
+    const portFlagIndex = process.argv.indexOf("--port");
+    const httpPort =
+      portFlagIndex !== -1
+        ? parseInt(process.argv[portFlagIndex + 1], 10)
+        : undefined;
+
+    await startHttpMcpServer(httpPort);
+    logger.info(
+      "Running in HTTP mode — server stays alive until manually stopped",
+    );
+  } else {
+    await startStdioMcpServer();
+    logger.info("Running in stdio mode");
+  }
 }
 
 main().catch((err) => {
