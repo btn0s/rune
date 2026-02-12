@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import { Github } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { CopyButton } from "@/components/copy-button"
@@ -96,14 +96,14 @@ export default function Page() {
 
           <div className="flex items-center gap-3">
             <CopyButton text="git clone https://github.com/btn0s/rune.git" label="git clone …/rune.git" />
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="link" size="sm" asChild>
               <a
                 href="https://github.com/btn0s/rune"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Github className="h-3.5 w-3.5" />
                 GitHub
+                <ArrowUpRight className="h-3 w-3" />
               </a>
             </Button>
           </div>
