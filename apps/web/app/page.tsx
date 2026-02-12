@@ -3,9 +3,7 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { CopyButton } from "@/components/copy-button";
 import { CodeBlock } from "@/components/code-block";
-import { FloatingNav } from "@/components/floating-nav";
 import logo from "./rune-logo.png";
 
 const SITE_URL = "https://rune.design";
@@ -56,10 +54,6 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
       <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-40">
-        <aside className="hidden w-28 shrink-0 pt-1 lg:block">
-          <FloatingNav />
-        </aside>
-
         <main className="w-full max-w-xl">
           <section id="overview" className="mb-12 scroll-mt-16">
             <div className="mb-6 flex items-center gap-2">
@@ -94,22 +88,16 @@ export default function Page() {
               <Badge variant="secondary">Components</Badge>
             </div>
 
-            <div className="flex items-center gap-3">
-              <CopyButton
-                text="bunx @btn0s/rune@latest"
-                label="bunx @btn0s/rune"
-              />
-              <Button variant="link" size="sm" asChild>
-                <a
-                  href="https://github.com/btn0s/rune"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub
-                  <ArrowUpRight className="h-3 w-3" />
-                </a>
-              </Button>
-            </div>
+            <Button variant="link" size="sm" className="px-0" asChild>
+              <a
+                href="https://github.com/btn0s/rune"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+                <ArrowUpRight className="h-3 w-3" />
+              </a>
+            </Button>
           </section>
 
           <div className="mb-12 h-px w-full bg-white/5" aria-hidden="true" />
