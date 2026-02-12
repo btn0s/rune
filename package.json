@@ -6,7 +6,9 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "server": "bun apps/server/src/index.ts",
+    "server:http": "bun apps/server/src/index.ts --http"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
@@ -16,6 +18,9 @@
     "typescript": "5.9.3"
   },
   "packageManager": "pnpm@10.4.1",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  },
   "engines": {
     "node": ">=20"
   }

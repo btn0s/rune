@@ -1,0 +1,7 @@
+{
+  "extends": "@workspace/typescript-config/server.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2015 --format=iife --platform=browser && cp src/ui.html dist/ui.html",
+    "dev": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2015 --format=iife --platform=browser --watch",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "*",
+    "@workspace/typescript-config": "workspace:*",
+    "esbuild": "^0.25.0"
+  }
+}

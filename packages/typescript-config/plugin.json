@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Figma Plugin",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020", "dom"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "isolatedModules": false,
+    "noUncheckedIndexedAccess": false
+  }
+}
