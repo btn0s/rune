@@ -55,16 +55,16 @@ export default function Page() {
     <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
       <FloatingNav />
 
-      <header className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-6 py-4 backdrop-blur-md">
+      <header className="fixed left-1/2 top-4 z-50 flex w-full max-w-xl -translate-x-1/2 items-center justify-between rounded-full bg-white/[0.08] px-5 py-2.5 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <Image
             src={logo}
             alt="rune"
-            width={24}
-            height={24}
+            width={20}
+            height={20}
             className="rounded"
           />
-          <span className="text-sm text-white/70">rune</span>
+          <span className="text-sm text-white/70">rune.design</span>
         </div>
         <a
           href="https://github.com/btn0s/rune"
