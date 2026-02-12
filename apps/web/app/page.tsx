@@ -96,8 +96,8 @@ export default function Page() {
 
             <div className="flex items-center gap-3">
               <CopyButton
-                text="git clone https://github.com/btn0s/rune.git"
-                label="git clone …/rune.git"
+                text="bunx @rune-design/mcp@latest"
+                label="bunx @rune-design/mcp"
               />
               <Button variant="link" size="sm" asChild>
                 <a
@@ -123,24 +123,10 @@ export default function Page() {
               <li>
                 <div className="mb-3 flex gap-4">
                   <span className="shrink-0 text-white/20">01</span>
-                  <span className="text-white/70">Clone the repo</span>
-                </div>
-                <CodeBlock copyText="git clone https://github.com/btn0s/rune.git && cd rune && pnpm install">
-                  <span className="text-white/60">
-                    git clone https://github.com/btn0s/rune.git
-                  </span>
-                  {"\n"}
-                  <span className="text-white/60">cd rune && pnpm install</span>
-                </CodeBlock>
-              </li>
-
-              <li>
-                <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">02</span>
                   <span className="text-white/70">Add to your MCP config</span>
                 </div>
                 <CodeBlock
-                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bun", "run", "/path/to/rune/apps/server/src/index.ts"]\n    }\n  }\n}`}
+                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bunx", "@rune-design/mcp@latest"]\n    }\n  }\n}`}
                 >
                   <span className="text-white/20">{`{`}</span>
                   {"\n"}
@@ -151,7 +137,7 @@ export default function Page() {
                   <span className="text-white/20">{`: {`}</span>
                   {"\n"}
                   <span className="text-white/20">{`      "command": `}</span>
-                  <span className="text-white/60">{`["bun", "run", "/path/to/rune/apps/server/src/index.ts"]`}</span>
+                  <span className="text-white/60">{`["bunx", "@rune-design/mcp@latest"]`}</span>
                   {"\n"}
                   <span className="text-white/20">{`    }`}</span>
                   {"\n"}
@@ -161,13 +147,22 @@ export default function Page() {
                 </CodeBlock>
                 <p className="mt-3 text-xs text-white/30">
                   Works with Claude Code, Cursor, Windsurf, and any
-                  MCP-compatible client.
+                  MCP-compatible client. Requires{" "}
+                  <a
+                    href="https://bun.sh"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline transition-colors hover:text-white/50"
+                  >
+                    Bun
+                  </a>
+                  .
                 </p>
               </li>
 
               <li>
                 <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">03</span>
+                  <span className="shrink-0 text-white/20">02</span>
                   <span className="text-white/70">Add the Figma plugin</span>
                 </div>
                 <p className="text-white/40">

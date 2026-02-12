@@ -1,26 +1,43 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "private": true,
+  "name": "@rune-design/mcp",
+  "version": "0.1.0",
+  "description": "MCP server that gives AI agents full read-write access to Figma",
   "type": "module",
-  "bin": {
-    "rune-mcp": "src/index.ts"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/btn0s/rune.git",
+    "directory": "apps/server"
   },
+  "keywords": [
+    "figma",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "design"
+  ],
+  "bin": {
+    "rune": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "bun build src/index.ts --outfile dist/server.js --target node",
+    "build": "bun build src/index.ts --outfile dist/index.js --target bun --external '@modelcontextprotocol/*' --external 'zod' --external 'sharp' && node -e \"const f=require('fs');f.writeFileSync('dist/index.js','#!/usr/bin/env bun\\n'+f.readFileSync('dist/index.js','utf8'))\" && chmod +x dist/index.js",
+    "prepublishOnly": "bun run build",
     "start": "bun src/index.ts",
     "start:http": "bun src/index.ts --http",
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@workspace/shared": "workspace:*",
     "sharp": "^0.34.5",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/bun": "^1.3.8",
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/shared": "workspace:*",
     "@workspace/typescript-config": "workspace:*"
   }
 }

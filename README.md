@@ -6,14 +6,32 @@ rune is an open-source MCP server and Figma plugin that gives AI agents full rea
 
 ## Get started
 
-### 1. Clone the repo
+### 1. Add to your MCP config
+
+```json
+{
+  "mcpServers": {
+    "rune": {
+      "command": ["bunx", "@rune-design/mcp@latest"]
+    }
+  }
+}
+```
+
+Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client. Requires [Bun](https://bun.sh).
+
+### 2. Add the Figma plugin
+
+In Figma, go to **Plugins → Development → Import plugin from manifest** and select `apps/plugin/manifest.json` from the cloned repo. Run the plugin to connect.
+
+### Development
 
 ```bash
 git clone https://github.com/btn0s/rune.git
 cd rune && pnpm install
 ```
 
-### 2. Add to your MCP config
+Run the server locally from source:
 
 ```json
 {
@@ -24,12 +42,6 @@ cd rune && pnpm install
   }
 }
 ```
-
-Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client.
-
-### 3. Add the Figma plugin
-
-In Figma, go to **Plugins → Development → Import plugin from manifest** and select `apps/plugin/manifest.json` from the cloned repo. Run the plugin to connect.
 
 ### Advanced: HTTP mode
 
