@@ -1,31 +1,38 @@
-# shadcn/ui monorepo template
+# rune
 
-This template is for creating a monorepo with shadcn/ui.
+Give your AI agent full access to Figma.
 
-## Usage
+rune is an open-source MCP server and Figma plugin that gives AI agents full read-write access to Figma. Create, edit, and manipulate designs — not just inspect them.
 
-```bash
-pnpm dlx shadcn@latest init
-```
+## Get started
 
-## Adding components
-
-To add components to your app, run the following command at the root of your `web` app:
+### 1. Clone the repo
 
 ```bash
-pnpm dlx shadcn@latest add button -c apps/web
+git clone https://github.com/btn0s/rune.git
+cd rune && pnpm install
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+### 2. Start the server
 
-## Tailwind
-
-Your `tailwind.config.ts` and `globals.css` are already set up to use the components from the `ui` package.
-
-## Using components
-
-To use the components in your app, import them from the `ui` package.
-
-```tsx
-import { Button } from "@workspace/ui/components/button"
+```bash
+bun run apps/server/src/index.ts
 ```
+
+### 3. Add to your MCP config
+
+```json
+{
+  "mcpServers": {
+    "rune": {
+      "url": "http://localhost:3056/mcp"
+    }
+  }
+}
+```
+
+Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client.
+
+### 4. Add the Figma plugin
+
+In Figma, go to **Plugins → Development → Import plugin from manifest** and select `apps/plugin/manifest.json` from the cloned repo. Run the plugin to connect.
