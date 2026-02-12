@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import { Github } from "lucide-react"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { CopyButton } from "@/components/copy-button"
 import { CodeBlock } from "@/components/code-block"
 import { FloatingNav } from "@/components/floating-nav"
@@ -53,65 +55,68 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
-      <FloatingNav />
+      <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-40">
+        <aside className="hidden w-28 shrink-0 pt-1 lg:block">
+          <FloatingNav />
+        </aside>
 
-      <header className="fixed left-1/2 top-4 z-50 flex w-full max-w-xl -translate-x-1/2 items-center justify-between rounded-full bg-white/[0.08] px-5 py-2.5 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <Image
-            src={logo}
-            alt="rune"
-            width={20}
-            height={20}
-            className="rounded"
-          />
-          <span className="text-sm text-white/70">rune.design</span>
-        </div>
-        <a
-          href="https://github.com/btn0s/rune"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/30 transition-colors hover:text-white/70"
-          aria-label="rune on GitHub"
-        >
-          <Github className="h-4 w-4" />
-        </a>
-      </header>
+        <main className="w-full max-w-xl">
+          <section id="overview" className="mb-12 scroll-mt-16">
+            <div className="mb-6 flex items-center gap-2">
+              <Image
+                src={logo}
+                alt="rune"
+                width={20}
+                height={20}
+                className="rounded"
+              />
+              <span className="text-sm text-white/50">rune.design</span>
+            </div>
 
-      <main className="mx-auto max-w-xl px-6 pb-32 pt-32">
-        <section id="overview" className="mb-24 scroll-mt-72">
-          <div className="mb-8 flex items-center gap-4">
-            <Image
-              src={logo}
-              alt="rune"
-              width={48}
-              height={48}
-              className="rounded-lg"
-            />
-          </div>
-
-          <h1 className="mb-6 text-3xl font-normal leading-tight tracking-tight text-white">
+          <h1 className="mb-4 text-3xl font-normal leading-tight tracking-tight text-white">
             Give your AI agent
             <br />
             full access to Figma.
           </h1>
 
-          <p className="mb-8 leading-relaxed text-white/40">
+          <p className="mb-6 leading-relaxed text-white/40">
             rune is an open-source MCP server and Figma plugin that gives your
             agent full read-write access to Figma. Create, edit, and manipulate
             designs — not just inspect them.
           </p>
 
-          <CopyButton text="git clone https://github.com/btn0s/rune.git" />
+          <div className="mb-8 flex flex-wrap gap-2">
+            <Badge variant="secondary">Create frames & layouts</Badge>
+            <Badge variant="secondary">Edit text & styles</Badge>
+            <Badge variant="secondary">Read any node</Badge>
+            <Badge variant="secondary">Export assets</Badge>
+            <Badge variant="secondary">Auto-layout</Badge>
+            <Badge variant="secondary">Components</Badge>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <CopyButton text="git clone https://github.com/btn0s/rune.git" label="git clone …/rune.git" />
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href="https://github.com/btn0s/rune"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="h-3.5 w-3.5" />
+                GitHub
+              </a>
+            </Button>
+          </div>
         </section>
 
-        <div className="mb-24 h-px w-full bg-white/5" aria-hidden="true" />
+        <div className="mb-12 h-px w-full bg-white/5" aria-hidden="true" />
 
-        <section id="get-started" className="mb-24 scroll-mt-72">
-          <h2 className="mb-8 text-xs uppercase tracking-widest text-white/30">
+        <section id="get-started" className="mb-12 scroll-mt-32">
+          <h2 className="mb-6 text-xs uppercase tracking-widest text-white/30">
             Get started
           </h2>
 
-          <ol className="space-y-10 text-sm leading-relaxed">
+          <ol className="space-y-8 text-sm leading-relaxed">
             <li>
               <div className="mb-3 flex gap-4">
                 <span className="shrink-0 text-white/20">01</span>
@@ -168,20 +173,21 @@ export default function Page() {
           </ol>
         </section>
 
-        <footer className="border-t border-white/5 pt-8 text-xs text-white/20">
-          <div className="flex items-center justify-between">
-            <span>rune v0.0.1</span>
-            <a
-              href="https://github.com/btn0s/rune"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-white/50"
-            >
-              github →
-            </a>
-          </div>
-        </footer>
-      </main>
+          <footer className="border-t border-white/5 pt-6 text-xs text-white/20">
+            <div className="flex items-center justify-between">
+              <span>rune v0.0.1</span>
+              <a
+                href="https://github.com/btn0s/rune"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-white/50"
+              >
+                github →
+              </a>
+            </div>
+          </footer>
+        </main>
+      </div>
     </div>
   )
 }

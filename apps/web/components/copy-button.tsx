@@ -6,9 +6,10 @@ import { cn } from "@workspace/ui/lib/utils"
 
 interface CopyButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
   text: string
+  label?: string
 }
 
-export function CopyButton({ text, className, ...props }: CopyButtonProps) {
+export function CopyButton({ text, label, className, ...props }: CopyButtonProps) {
   const [copied, setCopied] = React.useState(false)
 
   const handleCopy = async () => {
@@ -30,7 +31,7 @@ export function CopyButton({ text, className, ...props }: CopyButtonProps) {
       )}
       {...props}
     >
-      <span>{text}</span>
+      <span>{label ?? text}</span>
       {copied ? (
         <Check className="h-3.5 w-3.5 text-green-400" />
       ) : (

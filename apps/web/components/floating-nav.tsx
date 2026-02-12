@@ -13,10 +13,11 @@ export function FloatingNav() {
 
   React.useEffect(() => {
     function onScroll() {
+      const threshold = window.innerHeight * 0.4
       let current = links[0]?.href.slice(1) ?? ""
       for (const link of links) {
         const el = document.getElementById(link.href.slice(1))
-        if (el && el.getBoundingClientRect().top <= 200) {
+        if (el && el.getBoundingClientRect().top <= threshold) {
           current = link.href.slice(1)
         }
       }
@@ -29,7 +30,7 @@ export function FloatingNav() {
   }, [])
 
   return (
-    <nav className="fixed right-6 top-1/2 z-50 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
+    <nav className="fixed top-40 flex flex-col gap-3">
       {links.map((link) => (
         <a
           key={link.href}
