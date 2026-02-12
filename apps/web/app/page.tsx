@@ -88,16 +88,28 @@ export default function Page() {
               <Badge variant="secondary">Components</Badge>
             </div>
 
-            <Button variant="link" size="sm" className="px-0" asChild>
-              <a
-                href="https://github.com/btn0s/rune"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                GitHub
-                <ArrowUpRight className="h-3 w-3" />
-              </a>
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="link" size="sm" className="px-0" asChild>
+                <a
+                  href="https://www.figma.com/community/plugin/1602795503714672621"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get the plugin
+                  <ArrowUpRight className="h-3 w-3" />
+                </a>
+              </Button>
+              <Button variant="link" size="sm" className="px-0" asChild>
+                <a
+                  href="https://github.com/btn0s/rune"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub
+                  <ArrowUpRight className="h-3 w-3" />
+                </a>
+              </Button>
+            </div>
           </section>
 
           <div className="mb-12 h-px w-full bg-white/5" aria-hidden="true" />
