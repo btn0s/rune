@@ -35,7 +35,7 @@ export function FloatingNav() {
           key={link.href}
           href={link.href}
           className={cn(
-            "text-right font-mono text-xs transition-all duration-200",
+            "text-right text-xs transition-all duration-200",
             active === link.href.slice(1)
               ? "text-white/90"
               : "text-white/20 hover:text-white/50",

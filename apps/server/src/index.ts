@@ -1,4 +1,4 @@
-import { startMcpServer, startHttpMcpServer, mcpServer } from "./mcp";
+import { startHttpMcpServer, mcpServer } from "./mcp";
 import { startBridge } from "./bridge";
 import { logger } from "./logger";
 import "./tools/create";
@@ -138,28 +138,12 @@ Page
 }));
 
 async function main(): Promise<void> {
-  const useHttp = process.argv.includes("--http");
   const portFlagIndex = process.argv.indexOf("--port");
   const httpPort = portFlagIndex !== -1 ? parseInt(process.argv[portFlagIndex + 1], 10) : undefined;
 
   startBridge();
-
-  if (useHttp) {
-    await startHttpMcpServer(httpPort);
-    logger.info("Running in HTTP mode — server stays alive until manually stopped");
-  } else {
-    await startMcpServer();
-
-    process.stdin.on("end", () => {
-      logger.info("stdin closed — MCP client disconnected, shutting down");
-      process.exit(0);
-    });
-
-    process.stdin.on("close", () => {
-      logger.info("stdin close event — shutting down");
-      process.exit(0);
-    });
-  }
+  await startHttpMcpServer(httpPort);
+  logger.info("Running in HTTP mode — server stays alive until manually stopped");
 }
 
 main().catch((err) => {

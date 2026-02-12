@@ -6,21 +6,60 @@ import { CodeBlock } from "@/components/code-block"
 import { FloatingNav } from "@/components/floating-nav"
 import logo from "./rune-logo.png"
 
+const SITE_URL = "https://rune.design"
+
 export const metadata: Metadata = {
-  title: "Rune",
-  description: "The MCP server for Figma.",
+  title: "rune — give your AI agent full access to Figma",
+  description:
+    "rune is an open-source MCP server and Figma plugin that gives AI agents full read-write access to Figma. Create, edit, and manipulate designs — not just inspect them.",
+  metadataBase: new URL(SITE_URL),
+  keywords: [
+    "rune",
+    "figma",
+    "mcp",
+    "model context protocol",
+    "ai design",
+    "figma plugin",
+    "figma mcp",
+    "ai figma",
+    "design automation",
+    "figma write access",
+  ],
+  authors: [{ name: "btn0s", url: "https://github.com/btn0s" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
+    siteName: "rune",
+    title: "rune — give your AI agent full access to Figma",
+    description:
+      "Open-source MCP server that gives AI agents full read-write access to Figma. Create, edit, and manipulate designs — not just inspect them.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "rune — give your AI agent full access to Figma",
+    description:
+      "Open-source MCP server that gives AI agents full read-write access to Figma.",
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function Page() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] font-mono text-white/80 selection:bg-white/20">
+    <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
       <FloatingNav />
 
       <header className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <Image
             src={logo}
-            alt="Rune"
+            alt="rune"
             width={24}
             height={24}
             className="rounded"
@@ -32,6 +71,7 @@ export default function Page() {
           target="_blank"
           rel="noopener noreferrer"
           className="text-white/30 transition-colors hover:text-white/70"
+          aria-label="rune on GitHub"
         >
           <Github className="h-4 w-4" />
         </a>
@@ -42,7 +82,7 @@ export default function Page() {
           <div className="mb-8 flex items-center gap-4">
             <Image
               src={logo}
-              alt="Rune"
+              alt="rune"
               width={48}
               height={48}
               className="rounded-lg"
@@ -50,21 +90,21 @@ export default function Page() {
           </div>
 
           <h1 className="mb-6 text-3xl font-normal leading-tight tracking-tight text-white">
-            Design with AI.
+            Give your AI agent
             <br />
-            Build in Figma.
+            full access to Figma.
           </h1>
 
           <p className="mb-8 leading-relaxed text-white/40">
-            Rune is an MCP server and Figma plugin that lets AI coding agents
-            read, create, and manipulate designs directly in Figma. Connect your
-            favorite AI tool and start designing.
+            rune is an open-source MCP server and Figma plugin that gives your
+            agent full read-write access to Figma. Create, edit, and manipulate
+            designs — not just inspect them.
           </p>
 
           <CopyButton text="git clone https://github.com/btn0s/rune.git" />
         </section>
 
-        <div className="mb-24 h-px w-full bg-white/5" />
+        <div className="mb-24 h-px w-full bg-white/5" aria-hidden="true" />
 
         <section id="get-started" className="mb-24 scroll-mt-72">
           <h2 className="mb-8 text-xs uppercase tracking-widest text-white/30">
@@ -88,8 +128,8 @@ export default function Page() {
                 <span className="shrink-0 text-white/20">02</span>
                 <span className="text-white/70">Start the server</span>
               </div>
-              <CodeBlock copyText="pnpm server:http">
-                <span className="text-white/60">pnpm server:http</span>
+              <CodeBlock copyText="pnpm server">
+                <span className="text-white/60">pnpm server</span>
               </CodeBlock>
             </li>
 

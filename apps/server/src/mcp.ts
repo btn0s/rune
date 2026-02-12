@@ -1,5 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
@@ -119,12 +118,6 @@ export function registerRawTool<Args extends ZodRawShapeCompat>(
   }
 
   logger.debug(`Registered raw tool: ${name}`);
-}
-
-export async function startMcpServer(): Promise<void> {
-  const transport = new StdioServerTransport();
-  await mcpServer.connect(transport);
-  logger.info("MCP server started (stdio)");
 }
 
 export async function startHttpMcpServer(port?: number): Promise<void> {
