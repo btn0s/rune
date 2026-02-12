@@ -6,17 +6,11 @@
   "capabilities": [],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
-  "editorType": [
-    "figma"
-  ],
+  "editorType": ["figma"],
   "ui": "dist/ui.html",
   "networkAccess": {
-    "allowedDomains": [
-      "none"
-    ],
-    "devAllowedDomains": [
-      "ws://localhost:3055"
-    ],
+    "allowedDomains": ["ws://localhost:3055"],
+    "devAllowedDomains": ["ws://localhost:3055"],
     "reasoning": "Connects to a local MCP server via WebSocket on localhost:3055 to bridge AI tool calls to the Figma Plugin API."
   }
 }
