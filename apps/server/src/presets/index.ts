@@ -1,5 +1,6 @@
 import type { StylePreset } from "./types";
 import { ambrookWarm } from "./ambrook-warm";
+import { wireframeDark } from "./wireframe-dark";
 
 export type { StylePreset } from "./types";
 
@@ -10,6 +11,7 @@ function register(preset: StylePreset): void {
 }
 
 register(ambrookWarm);
+register(wireframeDark);
 
 export function getPreset(name: string): StylePreset | undefined {
   return presets.get(name);
