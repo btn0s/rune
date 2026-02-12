@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
-      <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-64">
+      <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-40">
         <main className="w-full max-w-xl">
           <section id="overview" className="mb-12 scroll-mt-16">
             <div className="mb-6 flex items-center gap-2">
