@@ -12,7 +12,7 @@ rune is an open-source MCP server and Figma plugin that gives AI agents full rea
 {
   "mcpServers": {
     "rune": {
-      "command": ["bunx", "@rune-design/mcp@latest"]
+      "command": ["bunx", "@btn0s/rune@latest"]
     }
   }
 }

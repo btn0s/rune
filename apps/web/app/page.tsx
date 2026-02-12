@@ -96,8 +96,8 @@ export default function Page() {
 
             <div className="flex items-center gap-3">
               <CopyButton
-                text="bunx @rune-design/mcp@latest"
-                label="bunx @rune-design/mcp"
+                text="bunx @btn0s/rune@latest"
+                label="bunx @btn0s/rune"
               />
               <Button variant="link" size="sm" asChild>
                 <a
@@ -126,7 +126,7 @@ export default function Page() {
                   <span className="text-white/70">Add to your MCP config</span>
                 </div>
                 <CodeBlock
-                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bunx", "@rune-design/mcp@latest"]\n    }\n  }\n}`}
+                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bunx", "@btn0s/rune@latest"]\n    }\n  }\n}`}
                 >
                   <span className="text-white/20">{`{`}</span>
                   {"\n"}
@@ -137,7 +137,7 @@ export default function Page() {
                   <span className="text-white/20">{`: {`}</span>
                   {"\n"}
                   <span className="text-white/20">{`      "command": `}</span>
-                  <span className="text-white/60">{`["bunx", "@rune-design/mcp@latest"]`}</span>
+                  <span className="text-white/60">{`["bunx", "@btn0s/rune@latest"]`}</span>
                   {"\n"}
                   <span className="text-white/20">{`    }`}</span>
                   {"\n"}
