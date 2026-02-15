@@ -6,65 +6,291 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 12px 16px;
       background: var(--figma-color-bg, #fff);
       color: var(--figma-color-text, #333);
       font-size: 12px;
-    }
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 6px;
-      background: var(--figma-color-bg-secondary, #f5f5f5);
+      overflow: hidden;
     }
 
-    .dot {
-      width: 8px;
-      height: 8px;
+    /* Header / status bar — always visible */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      height: 52px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-left svg {
+      width: 16px;
+      height: 16px;
+      color: var(--figma-color-text, #333);
+    }
+    .title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px 4px 8px;
+      border-radius: 99px;
+      background: var(--figma-color-bg-secondary, #f5f5f5);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       flex-shrink: 0;
       background: #e53e3e;
       transition: background 0.2s;
     }
-    .dot.connected { background: #38a169; }
-    .status-text {
+    .status-dot.connecting { background: #d69e2e; }
+    .status-dot.connected { background: #38a169; }
+    .status-label {
       font-size: 11px;
+      color: var(--figma-color-text-secondary, #666);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--figma-color-border, #e5e5e5);
+      margin: 0 16px;
+    }
+
+    /* Content area — scrollable */
+    .content {
+      padding: 16px;
+      overflow-y: auto;
+      max-height: 280px;
+    }
+
+    /* Disconnected view */
+    .view-disconnected { display: block; }
+    .view-connected { display: none; }
+    body.connected .view-disconnected { display: none; }
+    body.connected .view-connected { display: block; }
+
+    .hero h2 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .hero p {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary, #666);
+      line-height: 1.5;
+    }
+
+    .steps {
+      margin-top: 16px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step {
+      display: flex;
+      gap: 10px;
+    }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--figma-color-bg-secondary, #f0f0f0);
+      color: var(--figma-color-text-secondary, #666);
+      font-size: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body strong {
+      font-size: 11px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .step-body p {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary, #666);
+      line-height: 1.4;
+    }
+    .code-block {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: var(--figma-color-bg-secondary, #f5f5f5);
+      font-family: "SF Mono", "Roboto Mono", Menlo, monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--figma-color-text-secondary, #555);
+    }
+
+    /* Reconnect area */
+    .reconnect-area {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .reconnect-status {
+      font-size: 10px;
+      color: var(--figma-color-text-tertiary, #999);
+    }
+    .btn-reconnect {
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--figma-color-border, #ddd);
+      background: var(--figma-color-bg, #fff);
+      color: var(--figma-color-text, #333);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-reconnect:hover {
+      background: var(--figma-color-bg-secondary, #f5f5f5);
+    }
+    .btn-reconnect:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--figma-color-border, #e5e5e5);
+    }
+    .footer span, .footer a {
+      font-size: 10px;
+      color: var(--figma-color-text-tertiary, #999);
+    }
+    .footer a {
+      text-decoration: none;
+    }
+    .footer a:hover {
       color: var(--figma-color-text-secondary, #666);
     }
   </style>
 </head>
 <body>
-  <div class="status">
-    <div class="dot" id="dot"></div>
-    <span class="status-text" id="statusText">Disconnected</span>
+  <!-- Header — always visible -->
+  <div class="header">
+    <div class="header-left">
+      <svg viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M58.5453 48.6259C58.3295 48.9911 58.0448 49.3095 57.7075 49.5631C57.3702 49.8166 56.9869 50.0003 56.5796 50.1036C56.1722 50.2069 55.7488 50.2278 55.3335 50.1652C54.9182 50.1025 54.5191 49.9574 54.1591 49.7383L37.6955 39.7213V57.76C37.6955 58.6193 37.3588 59.4434 36.7595 60.051C36.1602 60.6586 35.3473 61 34.4998 61C33.6522 61 32.8393 60.6586 32.24 60.051C31.6407 59.4434 31.304 58.6193 31.304 57.76V39.7213L14.8404 49.7383C14.4806 49.9572 14.0817 50.1022 13.6666 50.1648C13.2514 50.2275 12.8282 50.2067 12.421 50.1035C12.0139 50.0003 11.6307 49.8168 11.2935 49.5635C10.9563 49.3103 10.6715 48.9921 10.4556 48.6273C10.0194 47.8904 9.88986 47.0081 10.0954 46.1744C10.3009 45.3407 10.8247 44.6239 11.5515 44.1817L28.2893 34L11.5515 23.8183C10.8247 23.3761 10.3009 22.6593 10.0954 21.8256C9.88986 20.9919 10.0194 20.1096 10.4556 19.3727C10.8917 18.6359 11.5987 18.1049 12.421 17.8965C13.2434 17.6882 14.1136 17.8195 14.8404 18.2617L31.304 28.2787V10.24C31.304 9.3807 31.6407 8.55659 32.24 7.94897C32.8393 7.34136 33.6522 7 34.4998 7C35.3473 7 36.1602 7.34136 36.7595 7.94897C37.3588 8.55659 37.6955 9.3807 37.6955 10.24V28.2787L54.1591 18.2617C54.519 18.0428 54.9179 17.8978 55.333 17.8352C55.7481 17.7725 56.1713 17.7934 56.5785 17.8965C56.9857 17.9997 57.3688 18.1832 57.7061 18.4365C58.0433 18.6897 58.328 19.0079 58.544 19.3727C58.7599 19.7376 58.9029 20.142 58.9647 20.5629C59.0265 20.9837 59.0059 21.4128 58.9042 21.8256C58.8024 22.2384 58.6214 22.6269 58.3716 22.9688C58.1218 23.3107 57.808 23.5994 57.4481 23.8183L40.7102 34L57.4481 44.1817C58.1748 44.6236 58.6986 45.3401 58.9043 46.1735C59.1101 47.0069 58.981 47.889 58.5453 48.6259Z" fill="currentColor"/>
+      </svg>
+      <span class="title">rune</span>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot" id="dot"></div>
+      <span class="status-label" id="statusText">Disconnected</span>
+    </div>
   </div>
 
+  <!-- Disconnected view -->
+  <div class="view-disconnected" id="viewDisconnected">
+    <div class="divider"></div>
+    <div class="content">
+      <div class="hero">
+        <h2>Give your AI agent full access to Figma</h2>
+        <p>rune connects AI agents to read, create, and edit your designs in real time.</p>
+      </div>
+
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <strong>Add the MCP server</strong>
+            <p>Add to your MCP client config:</p>
+            <div class="code-block">{ "mcpServers": { "rune": {
+    "command": ["bunx",
+      "@btn0s/rune@latest"]
+  } } }</div>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <strong>Start your MCP client</strong>
+            <p>Works with Claude Code, Cursor, Windsurf, and any MCP-compatible client.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <strong>Keep this plugin open</strong>
+            <p>It will connect automatically when the server starts.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="reconnect-area">
+        <span class="reconnect-status" id="reconnectStatus">Connecting...</span>
+        <button class="btn-reconnect" id="btnReconnect">Try now</button>
+      </div>
+    </div>
+    <div class="footer">
+      <span>v0.0.1</span>
+      <a href="https://rune.design" target="_blank">rune.design</a>
+    </div>
+  </div>
+
+  <!-- Connected view — intentionally empty, just the header above -->
+  <div class="view-connected" id="viewConnected"></div>
 
   <script>
-    const SERVER_URL = 'ws://localhost:3055';
-    const MAX_RECONNECT_DELAY = 30000;
+    var SERVER_URL = 'ws://localhost:3055';
+    var MAX_RECONNECT_DELAY = 30000;
 
-    let ws = null;
-    let reconnectDelay = 1000;
-    let reconnectTimer = null;
+    var ws = null;
+    var reconnectDelay = 1000;
+    var reconnectTimer = null;
 
-    const dot = document.getElementById('dot');
-    const statusText = document.getElementById('statusText');
+    var dot = document.getElementById('dot');
+    var statusText = document.getElementById('statusText');
+    var reconnectStatus = document.getElementById('reconnectStatus');
+    var btnReconnect = document.getElementById('btnReconnect');
 
-    function setConnected(connected) {
-      if (connected) {
-        dot.classList.add('connected');
-        statusText.textContent = 'Connected';
+    function setState(state) {
+      document.body.className = state;
+      dot.className = 'status-dot ' + state;
+
+      var labels = { disconnected: 'Disconnected', connecting: 'Connecting...', connected: 'Connected' };
+      statusText.textContent = labels[state] || 'Disconnected';
+
+      if (state === 'connected') {
+        parent.postMessage({ pluginMessage: { type: 'ui_resize', width: 300, height: 52 } }, '*');
       } else {
-        dot.classList.remove('connected');
-        statusText.textContent = 'Disconnected';
+        parent.postMessage({ pluginMessage: { type: 'ui_resize', width: 300, height: 380 } }, '*');
       }
+
+      btnReconnect.disabled = (state === 'connecting');
     }
 
     function connect() {
       if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+
+      setState('connecting');
+      reconnectStatus.textContent = 'Connecting...';
 
       try {
         ws = new WebSocket(SERVER_URL);
@@ -75,38 +301,47 @@
 
       ws.onopen = function() {
         reconnectDelay = 1000;
-        setConnected(true);
+        setState('connected');
         ws.send(JSON.stringify({ type: 'plugin_connected' }));
       };
 
       ws.onmessage = function(event) {
         try {
-          const msg = JSON.parse(event.data);
+          var msg = JSON.parse(event.data);
           parent.postMessage({ pluginMessage: msg }, '*');
         } catch (_e) {}
       };
 
       ws.onclose = function() {
-        setConnected(false);
+        setState('disconnected');
         scheduleReconnect();
       };
 
       ws.onerror = function() {
-        setConnected(false);
+        setState('disconnected');
       };
     }
 
     function scheduleReconnect() {
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      var delaySec = Math.round(reconnectDelay / 1000);
+      reconnectStatus.textContent = 'Retrying in ' + delaySec + 's...';
       reconnectTimer = setTimeout(function() {
         reconnectTimer = null;
+        reconnectStatus.textContent = 'Connecting...';
         connect();
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
       }, reconnectDelay);
     }
 
+    btnReconnect.addEventListener('click', function() {
+      reconnectDelay = 1000;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      connect();
+    });
+
     window.onmessage = function(event) {
-      const msg = event.data.pluginMessage;
+      var msg = event.data.pluginMessage;
       if (!msg) return;
 
       if (msg.type === 'plugin_closing') {
