@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { ArrowUpRight } from "lucide-react";
-import { Button } from "@workspace/ui/components/button";
 import { Banner } from "@/components/banner";
 import logo from "./rune-logo.png";
 
@@ -53,7 +51,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white/80 selection:bg-white/20">
       <Banner />
-      <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-40">
+      <div className="mx-auto flex max-w-3xl justify-center gap-8 px-6 pb-24 pt-16">
         <main className="w-full max-w-xl">
           <section className="mb-12">
             <div className="mb-6 flex items-center gap-2">
@@ -78,21 +76,9 @@ export default function Page() {
               — the agent — full read-write access to a live Figma document. 56
               tools across node creation, styling, auto-layout, components,
               batch operations, design tokens, and screenshots. Not read-only.
-              Real mutations.
+              Real mutations. Everything you need to install and use rune is on
+              this page.
             </p>
-
-            <div className="flex items-center gap-3">
-              <Button variant="link" size="sm" className="px-0" asChild>
-                <a
-                  href="https://github.com/btn0s/rune"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  GitHub
-                  <ArrowUpRight className="h-3 w-3" />
-                </a>
-              </Button>
-            </div>
           </section>
 
           <div className="h-px w-full bg-white/5" aria-hidden="true" />
