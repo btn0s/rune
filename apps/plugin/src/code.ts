@@ -1,6 +1,6 @@
 import { commandRegistry } from './commands/index';
 
-figma.showUI(__html__, { width: 300, height: 380, themeColors: true });
+figma.showUI(__html__, { width: 400, height: 420, themeColors: true });
 
 figma.ui.onmessage = async (msg: { id?: string; type?: string; params?: Record<string, any>; storage_result?: any; storage_key?: string; width?: number; height?: number }) => {
   if (msg.type === 'ui_resize' && msg.width && msg.height) {
