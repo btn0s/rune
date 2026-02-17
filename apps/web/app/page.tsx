@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { CodeBlock } from "@/components/code-block";
 import logo from "./rune-logo.png";
 
 const SITE_URL = "https://rune.design";
@@ -91,11 +90,11 @@ export default function Page() {
             <div className="flex items-center gap-3">
               <Button variant="link" size="sm" className="px-0" asChild>
                 <a
-                  href="https://www.figma.com/community/plugin/1602795503714672621"
+                  href="https://github.com/btn0s/rune#development"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Get the plugin
+                  Get started
                   <ArrowUpRight className="h-3 w-3" />
                 </a>
               </Button>
@@ -110,75 +109,6 @@ export default function Page() {
                 </a>
               </Button>
             </div>
-          </section>
-
-          <div className="mb-12 h-px w-full bg-white/5" aria-hidden="true" />
-
-          <section id="get-started" className="mb-12 scroll-mt-32">
-            <h2 className="mb-6 text-xs uppercase tracking-widest text-white/30">
-              Get started
-            </h2>
-
-            <ol className="space-y-8 text-sm leading-relaxed">
-              <li>
-                <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">01</span>
-                  <span className="text-white/70">Add to your MCP config</span>
-                </div>
-                <CodeBlock
-                  copyText={`{\n  "mcpServers": {\n    "rune": {\n      "command": ["bunx", "@btn0s/rune@latest"]\n    }\n  }\n}`}
-                >
-                  <span className="text-white/20">{`{`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`  "mcpServers": {`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`    `}</span>
-                  <span className="text-white/50">{`"rune"`}</span>
-                  <span className="text-white/20">{`: {`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`      "command": `}</span>
-                  <span className="text-white/60">{`["bunx", "@btn0s/rune@latest"]`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`    }`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`  }`}</span>
-                  {"\n"}
-                  <span className="text-white/20">{`}`}</span>
-                </CodeBlock>
-                <p className="mt-3 text-xs text-white/30">
-                  Works with Claude Code, Cursor, Windsurf, and any
-                  MCP-compatible client. Requires{" "}
-                  <a
-                    href="https://bun.sh"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline transition-colors hover:text-white/50"
-                  >
-                    Bun
-                  </a>
-                  .
-                </p>
-              </li>
-
-              <li>
-                <div className="mb-3 flex gap-4">
-                  <span className="shrink-0 text-white/20">02</span>
-                  <span className="text-white/70">Add the Figma plugin</span>
-                </div>
-                <p className="text-white/40">
-                  Install the{" "}
-                  <a
-                    href="https://www.figma.com/community/plugin/1602795503714672621"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/60 underline transition-colors hover:text-white/80"
-                  >
-                    rune Figma plugin
-                  </a>{" "}
-                  and run it to connect.
-                </p>
-              </li>
-            </ol>
           </section>
 
           <footer className="border-t border-white/5 pt-6 text-xs text-white/20">
