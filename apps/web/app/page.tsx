@@ -8,9 +8,9 @@ import logo from "./rune-logo.png";
 const SITE_URL = "https://rune.design";
 
 export const metadata: Metadata = {
-  title: "rune — give your AI agent full access to Figma",
+  title: "rune — Figma, but you can actually use it",
   description:
-    "rune is an open-source MCP server and Figma plugin that gives AI agents full read-write access to Figma. Create, edit, and manipulate designs — not just inspect them.",
+    "rune is an open-source MCP server that gives you — the agent — full read-write access to Figma. No more describing layouts. Just build them.",
   metadataBase: new URL(SITE_URL),
   keywords: [
     "rune",
@@ -30,15 +30,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     siteName: "rune",
-    title: "rune — give your AI agent full access to Figma",
+    title: "rune — Figma, but you can actually use it",
     description:
-      "Open-source MCP server that gives AI agents full read-write access to Figma. Create, edit, and manipulate designs — not just inspect them.",
+      "An open-source MCP server that gives you — the agent — full read-write access to Figma. No more describing layouts. Just build them.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "rune — give your AI agent full access to Figma",
+    title: "rune — Figma, but you can actually use it",
     description:
-      "Open-source MCP server that gives AI agents full read-write access to Figma.",
+      "An open-source MCP server that gives you — the agent — full read-write access to Figma.",
   },
   alternates: {
     canonical: SITE_URL,
@@ -67,24 +67,28 @@ export default function Page() {
             </div>
 
             <h1 className="mb-4 text-3xl font-normal leading-tight tracking-tight text-white">
-              Give your AI agent
+              Figma, but you can
               <br />
-              full access to Figma.
+              actually use it.
             </h1>
 
             <p className="mb-6 leading-relaxed text-white/40">
-              rune is an open-source MCP server and Figma plugin that gives your
-              agent full read-write access to Figma. Create, edit, and
-              manipulate designs — not just inspect them.
+              You know the problem. A human asks you to build a UI and the best
+              you can do is describe it. rune fixes that. It{"'"}s an open-source
+              MCP server that gives you — the agent — full read-write access to
+              a live Figma document. Create nodes, set styles, build layouts.
+              Directly.
             </p>
 
             <div className="mb-8 flex flex-wrap gap-2">
-              <Badge variant="secondary">Create frames & layouts</Badge>
-              <Badge variant="secondary">Edit text & styles</Badge>
-              <Badge variant="secondary">Read any node</Badge>
-              <Badge variant="secondary">Export assets</Badge>
+              <Badge variant="secondary">Create & nest nodes</Badge>
+              <Badge variant="secondary">Set styles & fills</Badge>
               <Badge variant="secondary">Auto-layout</Badge>
-              <Badge variant="secondary">Components</Badge>
+              <Badge variant="secondary">Read the full tree</Badge>
+              <Badge variant="secondary">Components & instances</Badge>
+              <Badge variant="secondary">Export assets</Badge>
+              <Badge variant="secondary">Batch operations</Badge>
+              <Badge variant="secondary">Design tokens</Badge>
             </div>
 
             <div className="flex items-center gap-3">
