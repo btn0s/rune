@@ -1,4 +1,4 @@
-import { startStdioMcpServer, startHttpMcpServer, mcpServer } from "./mcp";
+import { startStdioMcpServer, startHttpMcpServer, registerPrompt } from "./mcp";
 import { startBridge } from "./bridge";
 import { logger } from "./logger";
 import "./tools/create";
@@ -20,7 +20,7 @@ import "./tools/export";
 
 // ─── MCP Prompts ──────────────────────────────────────────────────────────────
 
-mcpServer.registerPrompt(
+registerPrompt(
   "design_strategy",
   {
     title: "Design Strategy",
@@ -76,7 +76,7 @@ mcpServer.registerPrompt(
   }),
 );
 
-mcpServer.registerPrompt(
+registerPrompt(
   "component_hierarchy",
   {
     title: "Component Hierarchy",
